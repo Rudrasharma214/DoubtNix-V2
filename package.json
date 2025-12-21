@@ -1,0 +1,36 @@
+{
+  "name": "doubtnix-backend-v2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rudrasharma214/DoubtNix-Backend-V2.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/Rudrasharma214/DoubtNix-Backend-V2/issues"
+  },
+  "homepage": "https://github.com/Rudrasharma214/DoubtNix-Backend-V2#readme",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "mongoose": "^9.0.2",
+    "multer": "^2.0.2",
+    "sib-api-v3-sdk": "^8.5.0",
+    "winston": "^3.19.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.11"
+  }
+}
