@@ -1,10 +1,12 @@
 import User from "../models/User.model.js";
 import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import STATUS from "../constants/statusCode.js";
 import OTP from "../models/Otp.model.js";
 import { generateOtp } from "../utils/generateOtp.js";
 import { sendEmailVerificationOtp } from "../utils/emailHelper/sendEmailVerificationOtp.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateToken.js";
+import { env } from "../config/env.js";
 
 export const registerUser = async (data) => {
   if (!data.email || !data.password) {

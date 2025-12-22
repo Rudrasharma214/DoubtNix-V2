@@ -1,5 +1,6 @@
 import { sendResponse, sendErrorResponse } from "../utils/Response.js";
 import * as authService from "../services/auth.service.js";
+import STATUS from "../constants/statusCode.js";
 
 
 export const register = async (req, res, next) => {
