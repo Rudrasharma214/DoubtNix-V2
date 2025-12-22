@@ -65,7 +65,79 @@ export const login = async (req, res, next) => {
       return sendErrorResponse(res, result.status, result.message, result.errors);
     }
 
+    const { refreshToken } = result.data;
+
+    // set refresh token in httpOnly cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+    
     sendResponse(res, result.status, result.message, result.data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyLoginOtp = async (req, res, next) =>{
+  try {
+    const { userId, otp } = req.body;
+
+    const result = await authService.verifyLoginOtp(userId, otp);
+
+    if (!result.success) {
+      return sendErrorResponse(
+        res,
+        result.status,
+        result.message,
+        result.errors || null
+      );
+    };
+
+    const { accessToken, refreshToken } = result.data;
+
+    // set refresh token in httpOnly cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
+    sendResponse(
+      res,
+      result.status,
+      result.message,
+      accessToken
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const logout = async (req, res, next) => {
+  try {
+    const userId = req.userId;
+    const result = await authService.logoutUser(userId);
+    
+    if (!result.success) {
+      return sendErrorResponse(
+        res,  
+        result.status,
+        result.message,
+        result.errors || null
+      );
+    }
+    // clear refresh token cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    sendResponse(res, result.status, result.message, null);
   } catch (error) {
     next(error);
   }

@@ -1,7 +1,7 @@
 import SibApiV3Sdk from 'sib-api-v3-sdk';
 import { env } from '../config/env.js';
 
-export const sendEmail = async (to, subject, text) => {
+export const sendEmail = async ({ to, subject, html, text }) => {
   try {
     const defaultClient = SibApiV3Sdk.ApiClient.instance;
     const apiKey = defaultClient.authentications["api-key"];
@@ -15,6 +15,7 @@ export const sendEmail = async (to, subject, text) => {
       sender: { email: senderEmail },
       to: [{ email: to }],
       subject,
+      htmlContent: html,
       textContent: text,
     };
 

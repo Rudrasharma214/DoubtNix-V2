@@ -4,9 +4,11 @@ import jwt from "jsonwebtoken";
 import STATUS from "../constants/statusCode.js";
 import OTP from "../models/Otp.model.js";
 import { generateOtp } from "../utils/generateOtp.js";
-import { sendEmailVerificationOtp } from "../utils/emailHelper/sendEmailVerificationOtp.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateToken.js";
 import { env } from "../config/env.js";
+import { sendOtpEmail } from "../templates/otp.template.js";
+import { sendWelcomeEmail } from "../templates/welcome.template.js";
+
 
 export const registerUser = async (data) => {
   if (!data.email || !data.password) {
@@ -45,7 +47,12 @@ export const registerUser = async (data) => {
   });
 
   // Send email verification OTP
-  await sendEmailVerificationOtp(user.email, otp);
+  await sendOtpEmail({
+    to: user.email,
+    otp,
+    title: "Verify your email",
+    description: "Welcome to DoubtNix! Please use the OTP below to verify your email address.",
+  });
 
   return {
     success: true,
@@ -76,12 +83,15 @@ export const verifyEmailOtp = async (userId, otp) => {
     };
   }
 
-  await User.findByIdAndUpdate(userId, {
+  const user = await User.findByIdAndUpdate(userId, {
     isEmailVerified: true,
     lastLogin: new Date(),
-  });
+  }, { new: true });
 
   await OTP.deleteOne({ _id: record._id });
+
+  // Send welcome email
+  sendWelcomeEmail(user);
 
   // generate tokens here
   const accessToken = generateAccessToken({ userId });
@@ -101,9 +111,156 @@ export const verifyEmailOtp = async (userId, otp) => {
   };
 };
 
+export const loginUser = async (email, password) => {
+  if (!email || !password) {
+    return {
+      success: false,
+      status: STATUS.BAD_REQUEST,
+      message: "Email and password are required",
+    };
+  }
+
+  const user = await User.findOne({ email }).select("+password");
+  if (!user) {
+    return {
+      success: false,
+      status: STATUS.UNAUTHORIZED,
+      message: "Invalid email or password",
+    };
+  }
+
+  // Compare password using model method
+  const isPasswordValid = await user.comparePassword(password);
+  if (!isPasswordValid) {
+    return {
+      success: false,
+      status: STATUS.UNAUTHORIZED,
+      message: "Invalid email or password",
+    };
+  }
+
+  if (!user.isEmailVerified) {
+    return {
+      success: false,
+      status: STATUS.FORBIDDEN,
+      message: "Email not verified",
+    };
+  }
+
+  const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const lastLogin = user.lastLogin ? user.lastLogin.getTime() : 0;
+
+  if (now - lastLogin > FIFTEEN_DAYS) {
+    const otp = generateOtp();
+    const hashedOtp = await bcrypt.hash(otp, 12);
+
+    await OTP.create({
+      userId: user._id,
+      otp: hashedOtp,
+      expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    });
+
+    await sendOtpEmail({
+      to: user.email,
+      otp,
+      title: "Login OTP Verification",
+      description: "For security reasons, please use the OTP below to complete your login.",
+    });
+
+    return {
+      success: true,
+      status: STATUS.OK,
+      message: "OTP sent to email for verification",
+      data: {
+        requiresOtp: true,
+        userId: user._id,
+      },
+    };
+  }
+
+  const accessToken = generateAccessToken({ userId: user._id });
+  const refreshToken = generateRefreshToken({ userId: user._id });
+
+  const hashedRefresh = await bcrypt.hash(refreshToken, 12);
+  await User.findByIdAndUpdate(user._id, {
+    refreshToken: hashedRefresh,
+    lastLogin: new Date(),
+  });
+
+  return {
+    success: true,
+    status: STATUS.OK,
+    message: "Login successful",
+    data: {
+      requiresOtp: false,
+      accessToken,
+      refreshToken,
+    },
+  };
+};
+
+export const verifyLoginOtp = async (userId, otp) => {
+  const record = await OTP.findOne({ userId });
+  if (!record) {
+    return {
+      success: false,
+      status: STATUS.BAD_REQUEST,
+      message: "OTP expired or invalid",
+    };
+  }
+  const isValid = await bcrypt.compare(otp, record.otp);
+  if (!isValid) {
+    return {
+      success: false,
+      status: STATUS.UNAUTHORIZED,
+      message: "Invalid OTP",
+    };
+  }
+
+  await User.findByIdAndUpdate(userId, {
+    lastLogin: new Date(),
+  });
+
+  await OTP.deleteOne({ _id: record._id });
+
+  const accessToken = generateAccessToken({ userId });
+  const refreshToken = generateRefreshToken({ userId });
+
+  const hashedRefresh = await bcrypt.hash(refreshToken, 12);
+  await User.findByIdAndUpdate(userId, {
+    refreshToken: hashedRefresh,
+  });
+
+  return {
+    success: true,
+    status: STATUS.OK,
+    message: "Login successful",
+    data: { accessToken, refreshToken },
+  };
+};
+
+export const logoutUser = async (userId) => {
+  const user = await User.findById(userId).select("+refreshToken");
+  if (!user || !user.refreshToken) {
+    return {
+      success: false,
+      status: STATUS.UNAUTHORIZED,
+      message: "User not logged in",
+    };
+  }
+
+  user.refreshToken = null;
+  await user.save();
+  return {
+    success: true,
+    status: STATUS.OK,
+    message: "Logout successful",
+  };
+};
+
 export const refreshToken = async (incomingRefreshToken) => {
   try {
-    // 1. Verify refresh token signature
     const decoded = jwt.verify(
       incomingRefreshToken,
       env.JWT_REFRESH_SECRET
@@ -117,7 +274,6 @@ export const refreshToken = async (incomingRefreshToken) => {
       };
     }
 
-    // 2. Fetch user
     const user = await User.findById(decoded.userId).select(
       "+refreshToken"
     );
@@ -130,7 +286,6 @@ export const refreshToken = async (incomingRefreshToken) => {
       };
     }
 
-    // 3. Compare hashed refresh token
     const isValid = await bcrypt.compare(
       incomingRefreshToken,
       user.refreshToken
@@ -144,7 +299,6 @@ export const refreshToken = async (incomingRefreshToken) => {
       };
     }
 
-    // 4. Rotate tokens
     const newAccessToken = generateAccessToken({
       userId: user._id,
     });
@@ -153,7 +307,6 @@ export const refreshToken = async (incomingRefreshToken) => {
       userId: user._id,
     });
 
-    // 5. Hash & store new refresh token
     user.refreshToken = await bcrypt.hash(newRefreshToken, 12);
     await user.save();
 
