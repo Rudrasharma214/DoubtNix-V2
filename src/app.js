@@ -1,8 +1,8 @@
 import express from 'express';
-import errorHandler from './middlewares/error.middleware';
+import errorHandler from './middlewares/error.middleware.js';
 import cookieParser from "cookie-parser";
 import cors from 'cors';
-import { env } from './config/env';
+import { env } from './config/env.js';
 import routes from './routes/index.js';
 
 const app = express();
@@ -18,7 +18,7 @@ app.use(cors({
   credentials: true,
 }));
 
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.send('API is running...');
 });
 

@@ -3,19 +3,19 @@ import * as authService from "../services/auth.service.js";
 
 
 export const register = async (req, res, next) => {
-    try {
-        const userData = req.body;
+  try {
+    const userData = req.body;
 
-        const result = await authService.registerUser(userData);
+    const result = await authService.registerUser(userData);
 
-        if(!result.success) {
-            sendErrorResponse(res, result.status, result.message, result.errors);
-        };
+    if (!result.success) {
+      sendErrorResponse(res, result.status, result.message, result.errors);
+    };
 
-        sendResponse(res, result.status, result.message, result.data);
-    } catch (error) {
-        next(error);
-    }
+    sendResponse(res, result.status, result.message, result.data);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const verifyEmail = async (req, res, next) => {
@@ -33,11 +33,21 @@ export const verifyEmail = async (req, res, next) => {
       );
     }
 
+    const { accessToken, refreshToken } = result.data;
+
+    // set refresh token in httpOnly cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    });
+
     sendResponse(
       res,
       result.status,
       result.message,
-      result.data
+      accessToken
     );
   } catch (error) {
     next(error);
@@ -45,19 +55,19 @@ export const verifyEmail = async (req, res, next) => {
 };
 
 export const login = async (req, res, next) => {
-    try {
-        const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-        const result = await authService.loginUser(email, password);
+    const result = await authService.loginUser(email, password);
 
-        if(!result.success) {
-            return sendErrorResponse(res, result.status, result.message, result.errors);
-        }
-
-        sendResponse(res, result.status, result.message, result.data);
-    } catch (error) {
-        next(error);
+    if (!result.success) {
+      return sendErrorResponse(res, result.status, result.message, result.errors);
     }
+
+    sendResponse(res, result.status, result.message, result.data);
+  } catch (error) {
+    next(error);
+  }
 };
 
 export const refreshToken = async (req, res, next) => {

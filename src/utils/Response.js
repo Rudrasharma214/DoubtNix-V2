@@ -9,7 +9,7 @@ import STATUS from '../constants/statusCode.js';
  * @param {Any} data - Optional payload data
  */
 
-export default sendResponse = (res, statusCode = STATUS.OK, message, data = null) => {
+export const sendResponse = (res, statusCode = STATUS.OK, message, data = null) => {
     const response = {
         success: true,
         status: statusCode,
