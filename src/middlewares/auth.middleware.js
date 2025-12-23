@@ -25,7 +25,7 @@ export const authenticate = (req, res, next) => {
     }
 
     // attach user info to request
-    req.userId = decoded.userId;
+    req.user = { id: decoded.userId };
 
     next();
   } catch (error) {

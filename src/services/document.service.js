@@ -2,56 +2,76 @@ import STATUS from "../constants/statusCode.js"
 import cloudinary from "../config/cloudinary.js"
 import Document from "../models/Document.model.js"
 import User from "../models/User.model.js"
+import eventBus from "../events/eventBus.js"
 
 
 export const uploadDocument = async (id, file) => {
-    if (!id || !file) {
-        return {
-            success: false,
-            status: STATUS.BAD_REQUEST,
-            message: 'Invalid parameters'
-        }
+  if (!id || !file) {
+    return {
+      success: false,
+      status: STATUS.BAD_REQUEST,
+      message: 'Invalid parameters'
+    };
+  }
+
+  try {
+    const ext = file.originalname.split('.').pop().toLowerCase();
+
+    const imageTypes = ['jpg', 'jpeg', 'png', 'pdf'];
+    const rawTypes = ['doc', 'docx', 'txt'];
+
+    let resourceType = imageTypes.includes(ext) ? 'image' : 'raw';
+
+    const uploadOptions = {
+      folder: `documents/${id}`,
+      resource_type: resourceType,
+      access_mode: 'public',
+      use_filename: true,
+      unique_filename: true,
+    };
+
+    // 🔴 THIS IS THE CRITICAL FIX
+    if (ext === 'pdf') {
+      uploadOptions.content_disposition = 'inline';
     }
 
-    try {
-        const result = await cloudinary.uploader.upload(file.path, {
-            folder: `documents/${id}`,
-            resource_type: "auto"
-        });
+    const result = await cloudinary.uploader.upload(
+      file.path,
+      uploadOptions
+    );
 
-        await Document.create({
-            userId: id,
-            fileName: file.originalname,
-            fileType: file.mimetype,
-            fileUrl: result.secure_url,
-            cloudinaryPublicId: result.public_id,
-            fileSize: file.size,
-            processingStatus: 'pending',
-            uploadedAt: new Date()
-        });
+    const document = await Document.create({
+      userId: id,
+      filename: file.originalname,
+      fileType: ext,
+      fileUrl: result.secure_url,
+      cloudinaryPublicId: result.public_id,
+      fileSize: file.size,
+      uploadedAt: new Date()
+    });
 
-        return {
-            success: true,
-            status: STATUS.OK,
-            message: 'Document uploaded successfully',
-            data: {
-                url: result.secure_url,
-                publicId: result.public_id
-            }
-        }
-    } catch (error) {
-        return {
-            success: false,
-            status: STATUS.INTERNAL_ERROR,
-            message: 'Document upload failed',
-            errors: error.message
-        }
-    }
+    return {
+      success: true,
+      status: STATUS.OK,
+      message: 'Document uploaded successfully',
+      data: {
+        documentId: document._id,
+        url: result.secure_url
+      }
+    };
+
+  } catch (error) {
+    return {
+      success: false,
+      status: STATUS.INTERNAL_ERROR,
+      message: 'Document upload failed',
+      errors: error.message
+    };
+  }
+};
 
 
-}
-
-export const getUserDocuments = async ({id, page, limit, search, status}) => {
+export const getUserDocuments = async ({id, page, limit}) => {
     if (!id) {
         return {
             success: false,

@@ -1,9 +1,11 @@
 import * as documentService from '../services/document.service.js';
 import { sendResponse, sendErrorResponse } from "../utils/Response.js";
 import STATUS from "../constants/statusCode.js";
+import logger from '../config/logger.js';
 
 export const uploadDocument = async (req, res, next) => {
     try {
+        logger.info('Document upload initiated', req.user);
         const { id } = req.user;
         const file = req.file;
 
@@ -26,14 +28,12 @@ export const uploadDocument = async (req, res, next) => {
 export const getUserDocuments = async (req, res, next) => {
     try {
         const { id } = req.user;
-        const { page = 1, limit = 10, search = '', status } = req.query;
+        const { page = 1, limit = 10 } = req.query;
 
         const result = await documentService.getUserDocuments({
             id,
             page: parseInt(page, 10),
-            limit: parseInt(limit, 10),
-            search,
-            status
+            limit: parseInt(limit, 10)
         });
 
         if (!result.success) {
