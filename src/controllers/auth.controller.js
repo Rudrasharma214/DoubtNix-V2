@@ -6,6 +6,13 @@ import STATUS from "../constants/statusCode.js";
 export const register = async (req, res, next) => {
   try {
     const userData = req.body;
+    if (!userData.email || !userData.password) {
+      return {
+        success: false,
+        status: STATUS.BAD_REQUEST,
+        message: "Email and password are required",
+      };
+    }
 
     const result = await authService.registerUser(userData);
 
@@ -74,14 +81,14 @@ export const login = async (req, res, next) => {
       sameSite: "strict",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
-    
+
     sendResponse(res, result.status, result.message, result.data);
   } catch (error) {
     next(error);
   }
 };
 
-export const verifyLoginOtp = async (req, res, next) =>{
+export const verifyLoginOtp = async (req, res, next) => {
   try {
     const { userId, otp } = req.body;
 
@@ -121,10 +128,10 @@ export const logout = async (req, res, next) => {
   try {
     const userId = req.userId;
     const result = await authService.logoutUser(userId);
-    
+
     if (!result.success) {
       return sendErrorResponse(
-        res,  
+        res,
         result.status,
         result.message,
         result.errors || null

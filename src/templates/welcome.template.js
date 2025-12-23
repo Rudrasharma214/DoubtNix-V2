@@ -1,4 +1,4 @@
-import { sendEmail } from "../utils/mailer.js";
+import { sendEmail } from "../config/mailer.js";
 
 export const sendWelcomeEmail = async (user) => {
   const html = `

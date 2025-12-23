@@ -1,5 +1,5 @@
 import SibApiV3Sdk from 'sib-api-v3-sdk';
-import { env } from '../config/env.js';
+import { env } from './env.js';
 
 export const sendEmail = async ({ to, subject, html, text }) => {
   try {

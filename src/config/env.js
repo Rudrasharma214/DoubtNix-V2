@@ -11,4 +11,5 @@ export const env = {
     BREVO_API_KEY: process.env.BREVO_API_KEY || '',
     BREVO_FROM_EMAIL: process.env.BREVO_FROM_EMAIL || 'no-reply@example.com',
     CLIENT_URL: process.env.CLIENT_URL || 'http://localhost:3000',
+    OTP_SECRET: process.env.OTP_SECRET || 'your_otp_secret',
 }

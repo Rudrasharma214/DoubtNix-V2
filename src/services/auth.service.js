@@ -6,27 +6,20 @@ import OTP from "../models/Otp.model.js";
 import { generateOtp } from "../utils/generateOtp.js";
 import { generateAccessToken, generateRefreshToken } from "../utils/generateToken.js";
 import { env } from "../config/env.js";
-import { sendOtpEmail } from "../templates/otp.template.js";
-import { sendWelcomeEmail } from "../templates/welcome.template.js";
-
+import { verifyOtp } from "../utils/otpCompare.js";
+import eventBus from "../events/eventBus.js";
 
 export const registerUser = async (data) => {
-  if (!data.email || !data.password) {
-    return {
-      success: false,
-      status: STATUS.BAD_REQUEST,
-      message: "Email and password are required",
-    };
-  }
-
-  const existingUser = await User.findOne({ email: data.email });
-  if (existingUser) {
+  const exists = await User.exists({ email: data.email });
+  if (exists) {
     return {
       success: false,
       status: STATUS.CONFLICT,
-      message: "Email already registered",
+      message: 'Email already registered',
     };
   }
+
+  const otp = generateOtp();
 
   const user = await User.create({
     name: data.name,
@@ -35,107 +28,99 @@ export const registerUser = async (data) => {
     isEmailVerified: false,
   });
 
-  // Generate OTP
-  const otp = generateOtp();
-  const hashedOtp = await bcrypt.hash(otp, 12);
-
-  // Store OTP with TTL
   await OTP.create({
     userId: user._id,
-    otp: hashedOtp,
+    otp,
     expiresAt: new Date(Date.now() + 10 * 60 * 1000),
   });
 
-  // Send email verification OTP
-  await sendOtpEmail({
-    to: user.email,
+  eventBus.emit('email.verification', {
+    email: user.email,
     otp,
-    title: "Verify your email",
-    description: "Welcome to DoubtNix! Please use the OTP below to verify your email address.",
   });
 
   return {
     success: true,
     status: STATUS.CREATED,
-    message: "OTP sent to email. Please verify.",
-    data: {
-      userId: user._id,
-    },
+    message: 'OTP sent to email. Please verify your email.',
+    data: { userId: user._id },
   };
 };
 
 export const verifyEmailOtp = async (userId, otp) => {
-  const record = await OTP.findOne({ userId });
+  const record = await OTP.findOneAndDelete({ userId });
   if (!record) {
     return {
       success: false,
       status: STATUS.BAD_REQUEST,
-      message: "OTP expired or invalid",
+      message: 'OTP expired or invalid',
     };
   }
 
-  const isValid = await bcrypt.compare(otp, record.otp);
+  const isValid = verifyOtp(otp, record.otp);
   if (!isValid) {
     return {
       success: false,
       status: STATUS.UNAUTHORIZED,
-      message: "Invalid OTP",
+      message: 'Invalid OTP',
     };
   }
 
-  const user = await User.findByIdAndUpdate(userId, {
-    isEmailVerified: true,
-    lastLogin: new Date(),
-  }, { new: true });
+  const user = await User.findByIdAndUpdate(
+    userId,
+    {
+      isEmailVerified: true,
+      lastLogin: new Date(),
+    },
+    { new: true }
+  );
 
-  await OTP.deleteOne({ _id: record._id });
+  const [accessToken, refreshToken, hashedRefresh] = await Promise.all([
+    generateAccessToken({ userId }),
+    generateRefreshToken({ userId }),
+    bcrypt.hash(generateRefreshToken({ userId }), 10),
+  ]);
 
-  // Send welcome email
-  sendWelcomeEmail(user);
-
-  // generate tokens here
-  const accessToken = generateAccessToken({ userId });
-  const refreshToken = generateRefreshToken({ userId });
-
-  // hash & store refresh token
-  const hashedRefresh = await bcrypt.hash(refreshToken, 12);
   await User.findByIdAndUpdate(userId, {
     refreshToken: hashedRefresh,
   });
 
+  eventBus.emit('email.welcome', user);
+
   return {
     success: true,
     status: STATUS.OK,
-    message: "Email verified",
+    message: 'Email verified',
     data: { accessToken, refreshToken },
   };
 };
+
+const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
 
 export const loginUser = async (email, password) => {
   if (!email || !password) {
     return {
       success: false,
       status: STATUS.BAD_REQUEST,
-      message: "Email and password are required",
+      message: 'Email and password are required',
     };
   }
 
-  const user = await User.findOne({ email }).select("+password");
+  const user = await User.findOne({ email }).select('+password');
   if (!user) {
     return {
       success: false,
       status: STATUS.UNAUTHORIZED,
-      message: "Invalid email or password",
+      message: 'Invalid email or password',
     };
   }
 
-  // Compare password using model method
   const isPasswordValid = await user.comparePassword(password);
   if (!isPasswordValid) {
     return {
       success: false,
       status: STATUS.UNAUTHORIZED,
-      message: "Invalid email or password",
+      message: 'Invalid email or password',
     };
   }
 
@@ -143,35 +128,31 @@ export const loginUser = async (email, password) => {
     return {
       success: false,
       status: STATUS.FORBIDDEN,
-      message: "Email not verified",
+      message: 'Email not verified',
     };
   }
 
-  const FIFTEEN_DAYS = 15 * 24 * 60 * 60 * 1000;
   const now = Date.now();
-  const lastLogin = user.lastLogin ? user.lastLogin.getTime() : 0;
+  const lastLogin = user.lastLogin?.getTime() || 0;
 
   if (now - lastLogin > FIFTEEN_DAYS) {
     const otp = generateOtp();
-    const hashedOtp = await bcrypt.hash(otp, 12);
 
     await OTP.create({
       userId: user._id,
-      otp: hashedOtp,
+      otp,
       expiresAt: new Date(Date.now() + 10 * 60 * 1000),
     });
 
-    await sendOtpEmail({
-      to: user.email,
+    eventBus.emit('login.otp', {
+      email: user.email,
       otp,
-      title: "Login OTP Verification",
-      description: "For security reasons, please use the OTP below to complete your login.",
     });
 
     return {
       success: true,
       status: STATUS.OK,
-      message: "OTP sent to email for verification",
+      message: 'OTP sent to email for verification',
       data: {
         requiresOtp: true,
         userId: user._id,
@@ -179,10 +160,13 @@ export const loginUser = async (email, password) => {
     };
   }
 
-  const accessToken = generateAccessToken({ userId: user._id });
   const refreshToken = generateRefreshToken({ userId: user._id });
 
-  const hashedRefresh = await bcrypt.hash(refreshToken, 12);
+  const [accessToken, hashedRefresh] = await Promise.all([
+    generateAccessToken({ userId: user._id }),
+    bcrypt.hash(refreshToken, 10),
+  ]);
+
   await User.findByIdAndUpdate(user._id, {
     refreshToken: hashedRefresh,
     lastLogin: new Date(),
@@ -191,7 +175,7 @@ export const loginUser = async (email, password) => {
   return {
     success: true,
     status: STATUS.OK,
-    message: "Login successful",
+    message: 'Login successful',
     data: {
       requiresOtp: false,
       accessToken,
@@ -201,41 +185,40 @@ export const loginUser = async (email, password) => {
 };
 
 export const verifyLoginOtp = async (userId, otp) => {
-  const record = await OTP.findOne({ userId });
+  const record = await OTP.findOneAndDelete({ userId });
   if (!record) {
     return {
       success: false,
       status: STATUS.BAD_REQUEST,
-      message: "OTP expired or invalid",
+      message: 'OTP expired or invalid',
     };
   }
-  const isValid = await bcrypt.compare(otp, record.otp);
+
+  const isValid = verifyOtp(otp, record.otp);
   if (!isValid) {
     return {
       success: false,
       status: STATUS.UNAUTHORIZED,
-      message: "Invalid OTP",
+      message: 'Invalid OTP',
     };
   }
 
-  await User.findByIdAndUpdate(userId, {
-    lastLogin: new Date(),
-  });
-
-  await OTP.deleteOne({ _id: record._id });
-
-  const accessToken = generateAccessToken({ userId });
   const refreshToken = generateRefreshToken({ userId });
 
-  const hashedRefresh = await bcrypt.hash(refreshToken, 12);
+  const [accessToken, hashedRefresh] = await Promise.all([
+    generateAccessToken({ userId }),
+    bcrypt.hash(refreshToken, 10),
+  ]);
+
   await User.findByIdAndUpdate(userId, {
     refreshToken: hashedRefresh,
+    lastLogin: new Date(),
   });
 
   return {
     success: true,
     status: STATUS.OK,
-    message: "Login successful",
+    message: 'Login successful',
     data: { accessToken, refreshToken },
   };
 };
