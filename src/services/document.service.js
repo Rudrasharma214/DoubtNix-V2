@@ -62,29 +62,49 @@ export const uploadDocument = async ({
   }
 };
 
-export const getUserDocuments = async ({id, page, limit}) => {
+export const getUserDocuments = async ({id, page, limit, search}) => {
     if (!id) {
         return {
             success: false,
             status: STATUS.BAD_REQUEST,
             message: 'Invalid parameters'
         }
-    }
-
-    const userExists = await User.exists({ id });
-    if(!userExists) {
-        return {
-            success: false,
-            status: STATUS.NOT_FOUND,
-            message: 'User not found'
-        }
-    };
+    }  
 
     const offset = (page - 1) * limit;
+    if(search) {
+        const regex = new RegExp(search, 'i');
+        const documents = await Document.find({ userId: id, filename: { $regex: regex } })
+        .skip(offset)
+        .limit(limit)
+        .select('filename fileType fileSize uploadedAt processingStatus')
+        .sort({ uploadedAt: -1 });  
+        if(documents.length === 0) {
+            return {
+                success: false,
+                status: STATUS.NOT_FOUND,
+                message: 'No documents found matching the search criteria'
+            }
+        }
+        return {
+            success: true,
+            status: STATUS.OK,  
+            message: 'Documents fetched successfully',
+            data: {
+                documents,
+                pagination: {
+                    page: 1,
+                    limit: documents.length,
+                    total: documents.length
+                }
+            }
+        }
+    }
 
     const documents = await Document.find({ userId: id })
     .skip(offset)
     .limit(limit)
+    .select('filename fileType fileSize uploadedAt processingStatus')
     .sort({ uploadedAt: -1 });
     if(documents.length === 0) {
         return {
