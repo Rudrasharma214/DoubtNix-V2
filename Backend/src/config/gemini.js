@@ -1,55 +1,37 @@
-import axios from "axios";
+import { GoogleGenAI } from "@google/genai";
 import { env } from "./env.js";
 import logger from "./logger.js";
 
 class GeminiService {
   constructor() {
-    this.apiKey = env.GEMINI_API_KEY;
-    this.baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-    this.model = 'gemini-2.0-flash';
+    this.ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
+    this.model = 'gemini-2.5-flash';
   }
 
   async makeRequest(prompt, retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        const url = `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`;
-        const requestBody = {
-          contents: [{ parts: [{ text: prompt }] }]
-        };
-
-        const response = await axios.post(url, requestBody, {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 30000
+        const response = await this.ai.models.generateContent({
+          model: this.model,
+          contents: prompt,
         });
 
-        if (response.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-          return response.data.candidates[0].content.parts[0].text;
+        if (response.text) {
+          return response.text;
         }
 
         throw new Error('Invalid response format from Gemini API');
       } catch (error) {
-        const status = error.response?.status;
+        const status = error.status || error.code;
         const isRetryableError = [503, 429, 500, 502].includes(status);
 
-        if (error.response) {
-          logger.error(`Gemini API Error (attempt ${attempt}/${retries}):`, {
-            status: error.response.status,
-            data: error.response.data
-          });
-        } else if (error.request) {
-          logger.error(`Network Error (attempt ${attempt}/${retries}):`, error.message);
-        } else {
-          logger.error(`Request Error (attempt ${attempt}/${retries}):`, error.message);
-        }
+        logger.error(`Gemini API Error (attempt ${attempt}/${retries}):`, {
+          message: error.message,
+          status: status
+        });
 
         if (attempt === retries || !isRetryableError) {
-          if (error.response) {
-            throw new Error(`Gemini API Error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-          } else if (error.request) {
-            throw new Error('Network error when calling Gemini API');
-          } else {
-            throw new Error(`Request error: ${error.message}`);
-          }
+          throw new Error(`Gemini API Error: ${error.message}`);
         }
 
         const waitTime = Math.pow(2, attempt) * 1000;
