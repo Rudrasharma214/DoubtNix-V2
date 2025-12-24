@@ -4,7 +4,8 @@ import cookieParser from "cookie-parser";
 import cors from 'cors';
 import { env } from './config/env.js';
 import routes from './routes/index.js';
-import './events/email.listener.js';
+import './events/listeners/email.listener.js';
+import './events/listeners/document.listener.js';
 
 const app = express();
 
