@@ -18,6 +18,12 @@ export const storage = new CloudinaryStorage({
 
     const ext = path.extname(file.originalname).toLowerCase();
     const name = path.basename(file.originalname, ext);
+    
+    // Sanitize filename: remove special characters and spaces
+    const sanitizedName = name
+      .replace(/[^a-zA-Z0-9-_]/g, '_')  // Replace special chars with underscore
+      .replace(/_+/g, '_')               // Replace multiple underscores with single
+      .substring(0, 50);                 // Limit length
 
     // PDFs and documents should be 'raw', images should be 'image'
     const resourceType = ['.pdf', '.doc', '.docx', '.txt'].includes(ext) ? 'raw' : 'image';
@@ -25,7 +31,7 @@ export const storage = new CloudinaryStorage({
     return {
       folder: 'DoubtNix',
       resource_type: resourceType,
-      public_id: `${timestamp}-${randomString}-${name}`,
+      public_id: `${timestamp}-${randomString}-${sanitizedName}`,
       use_filename: false,
       unique_filename: false,
       access_mode: 'public'
