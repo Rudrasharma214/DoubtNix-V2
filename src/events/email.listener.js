@@ -47,6 +47,7 @@ eventBus.on(EVENTS.LOGIN_OTP, async ({ email, otp }) => {
 
 eventBus.on(EVENTS.DOCUMENT_EXTRACTION, async (event) => {
   const { mimeType, documentId } = event;
+  logger.info(`Received document extraction event for document ${documentId} with type ${mimeType}`);
 
   const doc = await Document.findOneAndUpdate(
     { _id: documentId, processingStatus: 'pending' },
@@ -64,12 +65,14 @@ eventBus.on(EVENTS.DOCUMENT_EXTRACTION, async (event) => {
 
     let rawText;
 
-    if (mimeType === 'pdf') {
+    if (mimeType === 'application/pdf' || mimeType === 'pdf') {
       rawText = await extractTextFromPDF(localPath);
-    } else if (['jpg', 'jpeg', 'png'].includes(mimeType)) {
+    } else if (['image/jpeg', 'image/jpg', 'image/png', 'jpg', 'jpeg', 'png'].includes(mimeType)) {
       rawText = await extractTextFromImage(localPath);
-    } else {
+    } else if (['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/vnd.ms-word', 'application/word', 'application/x-msword', 'doc', 'docx'].includes(mimeType)) {
       rawText = await extractTextFromDocx(localPath);
+    } else {
+      throw new Error(`Unsupported file type: ${mimeType}`);
     }
 
     logger.info(`Extracted text for document ${documentId}`);

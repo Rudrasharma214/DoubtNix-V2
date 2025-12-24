@@ -1,56 +1,53 @@
 import multer from 'multer';
-import path from 'path';
-import os from 'os';
+import { storage } from '../config/cloudinary.js';
+import logger from '../config/logger.js';
+import { env } from '../config/env.js';
 
-/**
- * Allowed MIME types
- */
-const ALLOWED_MIME_TYPES = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'image/png',
-  'image/jpeg',
-  'image/jpg'
-];
-
-/**
- * Storage configuration
- * Files are stored temporarily in OS temp directory
- */
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, os.tmpdir());
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    const filename = `upload_${Date.now()}${ext}`;
-    cb(null, filename);
-  }
-});
-
-/**
- * File filter (basic MIME validation)
- */
 const fileFilter = (req, file, cb) => {
-  if (!ALLOWED_MIME_TYPES.includes(file.mimetype)) {
-    return cb(
-      new Error('Unsupported file type. Only PDF, DOCX, and images are allowed.'),
-      false
-    );
+
+  const allowedMimeTypes = [
+    // PDF files
+    'application/pdf',
+
+    // Word documents
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-word',
+    'application/word',
+    'application/x-msword',
+
+    // Images
+    'image/jpeg',
+    'image/jpg',
+    'image/png',
+    'image/gif',
+
+    // Additional common variations
+    'application/x-pdf',
+    'text/pdf',
+    'image/pjpeg' // IE JPEG variant
+  ];
+
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    logger.info(`Accepted file upload with MIME type: ${file.mimetype}`);
+    cb(null, true);
+  } else {
+    logger.error(`Rejected file upload with MIME type: ${file.mimetype}`);
+    cb(new Error('Invalid file type. Only PDF, DOC, DOCX, JPG, JPEG, PNG, and GIF files are allowed.'), false);
   }
-  cb(null, true);
 };
 
-/**
- * Multer instance
- */
+
+// Configure multer with Cloudinary storage
 const upload = multer({
-  storage,
-  fileFilter,
+  storage: storage,
+  fileFilter: fileFilter,
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10 MB
+    fileSize: parseInt(env.MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB default
+    files: 1 // Only allow one file at a time
   }
 });
+
 
 /**
  * Export single-file upload middleware

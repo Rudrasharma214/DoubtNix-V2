@@ -6,7 +6,8 @@ export const finalizeExtraction = async (documentId, rawText) => {
     .trim();
 
   await Document.findByIdAndUpdate(documentId, {
-    extractedText: cleaned,
-    processingStatus: 'completed'
+    content: cleaned,
+    processingStatus: 'completed',
+    processedAt: new Date()
   });
 }

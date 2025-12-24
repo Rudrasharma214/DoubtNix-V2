@@ -14,7 +14,6 @@ const DocumentSchema = new mongoose.Schema(
         fileType: {
             type: String,
             required: true,
-            enum: ['pdf', 'doc', 'docx', 'jpg', 'jpeg', 'png']
         },
         fileUrl: {
             type: String,

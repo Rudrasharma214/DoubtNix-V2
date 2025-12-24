@@ -4,26 +4,43 @@ import STATUS from "../constants/statusCode.js";
 import logger from '../config/logger.js';
 
 export const uploadDocument = async (req, res, next) => {
-    try {
-        logger.info('Document upload initiated', req.user);
-        const { id } = req.user;
-        const file = req.file;
+  try {
+    logger.info('Document upload initiated', { userId: req.user?.id });
 
-        if (!file) {
-            return sendErrorResponse(res, STATUS.BAD_REQUEST, 'No file uploaded');
-        };
+    const { id } = req.user;
+    const { originalname, size, mimetype } = req.file;
+    const fileUrl = req.file.path;
+    const publicId = req.file.filename;
 
-        const result = await documentService.uploadDocument(id, file);
+    const result = await documentService.uploadDocument({
+        id,
+        filename: originalname,
+        fileType: mimetype,
+        fileUrl,
+        cloudinaryPublicId: publicId,
+        fileSize: size
+    });
 
-        if (!result.success) {
-            return sendErrorResponse(res, result.status, result.message, result.errors);
-        };
-
-        sendResponse(res, result.status, result.message, result.data);
-    } catch (error) {
-        next(error);
+    if (!result.success) {
+      return sendErrorResponse(
+        res,
+        result.status,
+        result.message,
+        result.errors
+      );
     }
-}
+
+    return sendResponse(
+      res,
+      result.status,
+      result.message,
+      result.data
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 export const getUserDocuments = async (req, res, next) => {
     try {

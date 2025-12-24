@@ -16,4 +16,5 @@ export const env = {
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY || '',
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET || '',
     NODE_ENV: process.env.NODE_ENV || 'development',
+    MAX_FILE_SIZE: process.env.MAX_FILE_SIZE || '10485760' // 10MB default
 }
