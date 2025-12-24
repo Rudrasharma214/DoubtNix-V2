@@ -41,7 +41,6 @@ export const uploadDocument = async (req, res, next) => {
   }
 };
 
-
 export const getUserDocuments = async (req, res, next) => {
     try {
         const { id } = req.user;
@@ -63,3 +62,30 @@ export const getUserDocuments = async (req, res, next) => {
         next(error);
     }
 }
+
+export const deleteDocument = async (req, res, next) => {
+  try {
+    const { id } = req.user;
+    const { documentId } = req.params;
+
+    const result = await documentService.deleteDocument({ userId: id, documentId });
+
+    if (!result.success) {
+      return sendErrorResponse(
+        res,
+        result.status,
+        result.message,
+        result.errors
+      );
+    }
+
+    return sendResponse(
+      res,
+      result.status,
+      result.message,
+      result.data
+    );
+  } catch (error) {
+    next(error);
+  }
+};

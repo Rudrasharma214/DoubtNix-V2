@@ -9,6 +9,6 @@ uploadRouter.use(authenticate);
 
 uploadRouter.post('/', uploadSingleDocument, uploadController.uploadDocument);
 uploadRouter.get('/', uploadController.getUserDocuments);
-// uploadRouter.delete('/:documentId', uploadController.deleteDocument);
+uploadRouter.delete('/:documentId', uploadController.deleteDocument);
 
 export default uploadRouter;

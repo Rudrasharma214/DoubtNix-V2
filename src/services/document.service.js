@@ -128,3 +128,30 @@ export const getUserDocuments = async ({id, page, limit, search}) => {
         }
     }
 };
+
+export const deleteDocument = async ({ userId, documentId }) => {
+  if (!userId || !documentId) {
+    return {   
+        success: false,
+        status: STATUS.BAD_REQUEST,
+        message: 'Invalid parameters'
+    };
+    }
+
+    const document = await Document.findOne({ _id: documentId, userId });
+    if (!document) {
+        return {
+            success: false,
+            status: STATUS.NOT_FOUND,
+            message: 'Document not found'
+        };
+    }
+
+    await Document.deleteOne({ _id: documentId, userId });
+
+    return {
+        success: true,
+        status: STATUS.OK,
+        message: 'Document deleted successfully'
+    };
+};
