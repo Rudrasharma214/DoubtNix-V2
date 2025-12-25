@@ -19,6 +19,17 @@ const ConversationSchema = new mongoose.Schema(
             required: true,
         },
 
+        sessionId: {
+            type: String,
+            required: true,
+            index: true
+        },
+
+        isActive: {
+            type: Boolean,
+            default: true
+        },
+
         lastActivity: {
             type: Date,
             default: Date.now
@@ -29,7 +40,6 @@ const ConversationSchema = new mongoose.Schema(
     }
 );
 
-ConversationSchema.index({ sessionId: 1, lastActivity: -1 });
 ConversationSchema.index({ documentId: 1 });
 
 const Conversation = mongoose.model('Conversation', ConversationSchema);

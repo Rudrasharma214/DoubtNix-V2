@@ -518,5 +518,3 @@ export default new GeminiService();
 //     }
 //   }
 // }
-
-// export default new GeminiService();
