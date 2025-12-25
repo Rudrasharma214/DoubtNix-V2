@@ -309,3 +309,118 @@ export const refreshToken = async (incomingRefreshToken) => {
     };
   }
 };
+
+export const getUserProfile = async (userId) => {
+  const user = await User.findById(userId).select('-password -refreshToken');
+  if (!user) {
+    return {
+      success: false,
+      status: STATUS.NOT_FOUND,
+      message: 'User not found',
+    };
+  };
+
+  return {
+    success: true,
+    status: STATUS.OK,
+    message: 'User profile fetched successfully',
+    data: user,
+  };
+  
+};
+
+export const changePassword = async (userId, currentPassword, newPassword) => {
+  const user = await User.findById(userId).select('+password');
+  if (!user) {
+    return {
+      success: false,
+      status: STATUS.NOT_FOUND,
+      message: 'User not found',
+    };
+  }
+
+  const isMatch = await user.comparePassword(currentPassword);
+  if (!isMatch) {
+    return {
+      success: false,
+      status: STATUS.UNAUTHORIZED,
+      message: 'Current password is incorrect',
+    };
+  }
+
+  user.password = newPassword;
+  await user.save();
+  
+  return {
+    success: true,
+    status: STATUS.OK,
+    message: 'Password changed successfully',
+  };
+};
+
+export const requestPasswordReset = async (email) => {
+  const user = await User.findOne({ email });
+  if (!user) {
+    return {
+      success: false,
+      status: STATUS.NOT_FOUND,
+      message: 'User with this email does not exist',
+    };
+  }
+
+  const otp = generateOtp();
+
+  await OTP.create({
+    userId: user._id,
+    otp,
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+  });
+
+  eventBus.emit('password.reset', {
+    email: user.email,
+    otp,
+  });
+  return {
+    success: true,
+    status: STATUS.OK,
+    message: 'If email exists, OTP has been sent for password reset',
+  };
+};
+
+export const resetPassword = async (userId, otp, newPassword) => {
+  const record = await OTP.findOneAndDelete({ userId });
+  if (!record) {
+    return {
+      success: false,
+      status: STATUS.BAD_REQUEST,
+      message: 'OTP expired or invalid',
+    };
+  }
+
+  const isValid = verifyOtp(otp, record.otp);
+  if (!isValid) {
+    return {
+      success: false,
+      status: STATUS.UNAUTHORIZED,
+      message: 'Invalid OTP',
+    };
+  }
+
+  const user = await User.findById(userId).select('+password');
+  if (!user) {
+    return {
+      success: false,
+      status: STATUS.NOT_FOUND,
+      message: 'User not found',
+    };
+  }
+
+  user.password = newPassword;
+  await user.save();
+
+  return {
+    success: true,
+    status: STATUS.OK,
+    message: 'Password reset successful',
+  };
+};

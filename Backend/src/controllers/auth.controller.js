@@ -195,3 +195,87 @@ export const refreshToken = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getUserProfile = async (req, res, next) => {
+  try {
+    const { id } = req.user;
+
+    const result = await authService.getUserProfile(id);
+
+    if (!result.success) {
+      return sendErrorResponse(
+        res,
+        result.status,
+        result.message,
+        result.errors || null
+      );
+    }
+
+    sendResponse(res, result.status, result.message, result.data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const changePassword = async (req, res, next) => {
+  try {
+    const { id: userId } = req.user;
+    const { currentPassword, newPassword } = req.body;
+
+    const result = await authService.changePassword(userId, currentPassword, newPassword);
+    
+    if (!result.success) {
+      return sendErrorResponse(
+        res,
+        result.status,
+        result.message,
+        result.errors || null
+      );
+    }
+
+    sendResponse(res, result.status, result.message, null);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const requestPasswordReset = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const result = await authService.requestPasswordReset(email);
+
+    if (!result.success) {
+      return sendErrorResponse(
+        res,
+        result.status,
+        result.message,
+        result.errors || null
+      );
+    }
+
+    sendResponse(res, result.status, result.message, null);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req, res, next) => {
+  try {
+    const { userId, otp, newPassword } = req.body;
+
+    const result = await authService.resetPassword(userId, otp, newPassword);
+
+    if (!result.success) {
+      return sendErrorResponse(
+        res,
+        result.status,
+        result.message,
+        result.errors || null
+      );
+    }
+
+    sendResponse(res, result.status, result.message, null);
+  } catch (error) {
+    next(error);
+  }
+};

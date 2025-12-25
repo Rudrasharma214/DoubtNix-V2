@@ -39,5 +39,17 @@ eventBus.on(EVENTS.LOGIN_OTP, async ({ email, otp }) => {
   }
 });
 
+eventBus.on(EVENTS.PASSWORD_RESET, async ({ email, otp }) => {
+  try {
+    await sendOtpEmail({
+      to: email,
+      otp,
+      title: 'Password Reset OTP',
+      description: 'You requested a password reset. Please use the OTP below to reset your password.',
+    });
+  } catch (err) {
+    logger.error('Password reset email failed', err);
+  }
+});
 
 
