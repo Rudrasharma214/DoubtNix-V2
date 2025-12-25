@@ -1,5 +1,5 @@
 import STATUS from '../constants/statusCode.js';
-import Conversation from '../models/conversation.model.js';
+import Conversation from '../models/Conversation.model.js';
 
 
 export const getConversations = async ({
