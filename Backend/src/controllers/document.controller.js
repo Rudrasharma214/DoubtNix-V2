@@ -7,10 +7,32 @@ export const uploadDocument = async (req, res, next) => {
   try {
     logger.info('Document upload initiated', { userId: req.user?.id });
 
+    // Check if file was uploaded
+    if (!req.file) {
+      logger.error('No file uploaded in request');
+      return sendErrorResponse(
+        res,
+        STATUS.BAD_REQUEST,
+        'No file uploaded',
+        'Please select a file to upload'
+      );
+    }
+
     const { id } = req.user;
     const { originalname, size, mimetype } = req.file;
     const fileUrl = req.file.path;
     const publicId = req.file.filename;
+
+    // Additional validation for required file properties
+    if (!originalname || !fileUrl || !publicId) {
+      logger.error('Incomplete file upload data', { originalname, fileUrl, publicId });
+      return sendErrorResponse(
+        res,
+        STATUS.INTERNAL_ERROR,
+        'File upload incomplete',
+        'File was not processed correctly by the server'
+      );
+    }
 
     const result = await documentService.uploadDocument({
         id,
