@@ -54,4 +54,52 @@ export const uploadToCloudinary = async (fileBuffer, filename, mimetype) => {
   });
 };
 
+// Custom delete function
+export const deleteFromCloudinary = async (publicId) => {
+  try {
+    logger.info(`Attempting to delete file from Cloudinary: ${publicId}`);
+    
+    // Determine resource type based on public_id or try both
+    let result;
+    
+    // Try deleting as image first (most common)
+    try {
+      result = await cloudinary.uploader.destroy(publicId, {
+        resource_type: 'image',
+        timeout: 10000
+      });
+      
+      if (result.result === 'ok') {
+        logger.info(`Successfully deleted image from Cloudinary: ${publicId}`);
+        return { success: true, result };
+      }
+    } catch (imageError) {
+      logger.warn(`Failed to delete as image, trying as raw: ${publicId}`);
+    }
+    
+    // If image deletion failed, try as raw (for PDFs, docs, etc.)
+    try {
+      result = await cloudinary.uploader.destroy(publicId, {
+        resource_type: 'raw',
+        timeout: 10000
+      });
+      
+      if (result.result === 'ok') {
+        logger.info(`Successfully deleted raw file from Cloudinary: ${publicId}`);
+        return { success: true, result };
+      }
+    } catch (rawError) {
+      logger.error(`Failed to delete as raw file: ${publicId}`, rawError);
+    }
+    
+    // If both failed, log the result
+    logger.warn(`Cloudinary deletion result for ${publicId}:`, result);
+    return { success: false, result };
+    
+  } catch (error) {
+    logger.error(`Error deleting file from Cloudinary: ${publicId}`, error);
+    return { success: false, error: error.message };
+  }
+};
+
 export default cloudinary;

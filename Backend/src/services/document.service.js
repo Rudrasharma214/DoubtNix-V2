@@ -3,6 +3,7 @@ import Document from "../models/Document.model.js"
 import User from "../models/User.model.js"
 import eventBus from "../events/eventBus.js"
 import logger from "../config/logger.js";
+import { deleteFromCloudinary } from "../config/cloudinary.js";
 
 
 export const uploadDocument = async ({
@@ -136,8 +137,9 @@ export const deleteDocument = async ({ userId, documentId }) => {
         status: STATUS.BAD_REQUEST,
         message: 'Invalid parameters'
     };
-    }
+  }
 
+  try {
     const document = await Document.findOne({ _id: documentId, userId });
     if (!document) {
         return {
@@ -147,11 +149,34 @@ export const deleteDocument = async ({ userId, documentId }) => {
         };
     }
 
+    // Delete from Cloudinary first
+    if (document.cloudinaryPublicId) {
+      logger.info(`Deleting document from Cloudinary: ${document.cloudinaryPublicId}`);
+      const cloudinaryResult = await deleteFromCloudinary(document.cloudinaryPublicId);
+      
+      if (!cloudinaryResult.success) {
+        logger.warn(`Failed to delete from Cloudinary: ${document.cloudinaryPublicId}`, cloudinaryResult);
+        // Continue with database deletion even if Cloudinary deletion fails
+      }
+    }
+
+    // Delete from database
     await Document.deleteOne({ _id: documentId, userId });
+    
+    logger.info(`Document ${documentId} deleted successfully for user ${userId}`);
 
     return {
         success: true,
         status: STATUS.OK,
         message: 'Document deleted successfully'
     };
+  } catch (error) {
+    logger.error(`Error deleting document ${documentId} for user ${userId}:`, error);
+    return {
+        success: false,
+        status: STATUS.INTERNAL_ERROR,
+        message: 'Failed to delete document',
+        errors: error.message
+    };
+  }
 };
