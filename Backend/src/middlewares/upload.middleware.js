@@ -1,5 +1,5 @@
 import multer from 'multer';
-import { storage } from '../config/cloudinary.js';
+import { storage, uploadToCloudinary } from '../config/cloudinary.js';
 import logger from '../config/logger.js';
 import { env } from '../config/env.js';
 import { sendErrorResponse } from '../utils/Response.js';
@@ -45,8 +45,9 @@ const upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
-    fileSize: parseInt(env.MAX_FILE_SIZE) || 10 * 1024 * 1024, // 10MB default
-    files: 1 // Only allow one file at a time
+    fileSize: parseInt(env.MAX_FILE_SIZE) || 10 * 1024 * 1024,
+    files: 1,
+    fieldSize: 1024 * 1024
   }
 });
 
@@ -56,9 +57,26 @@ const upload = multer({
  * Client field name must be: "file"
  */
 export const uploadSingleDocument = (req, res, next) => {
+  logger.info('Starting file upload middleware');
+  
+  // Set a timeout for the entire upload process
+  const timeout = setTimeout(() => {
+    logger.error('Upload timeout - operation took too long');
+    if (!res.headersSent) {
+      return sendErrorResponse(
+        res,
+        STATUS.INTERNAL_ERROR,
+        'Upload timeout',
+        'File upload took too long and was cancelled'
+      );
+    }
+  }, 45000);
+  
   const uploadMiddleware = upload.single('file');
   
-  uploadMiddleware(req, res, (err) => {
+  uploadMiddleware(req, res, async (err) => {
+    clearTimeout(timeout); // Clear timeout on completion
+    
     if (err) {
       logger.error('Upload middleware error:', err);
       
@@ -104,6 +122,8 @@ export const uploadSingleDocument = (req, res, next) => {
       );
     }
     
+    logger.info('Upload middleware completed without errors');
+    
     // Check if file was actually uploaded after middleware processing
     if (!req.file) {
       logger.error('No file attached to request after upload middleware');
@@ -115,12 +135,35 @@ export const uploadSingleDocument = (req, res, next) => {
       );
     }
     
-    logger.info('File upload middleware completed successfully', {
-      filename: req.file.originalname,
-      size: req.file.size,
-      mimetype: req.file.mimetype
-    });
-    
-    next();
+    try {
+      logger.info('Starting manual Cloudinary upload');
+      const cloudinaryResult = await uploadToCloudinary(
+        req.file.buffer,
+        req.file.originalname,
+        req.file.mimetype
+      );
+      
+      // Attach Cloudinary result to req.file for controller use
+      req.file.path = cloudinaryResult.secure_url;
+      req.file.filename = cloudinaryResult.public_id;
+      
+      logger.info('File upload middleware completed successfully', {
+        filename: req.file.originalname,
+        size: req.file.size,
+        mimetype: req.file.mimetype,
+        path: req.file.path,
+        filename_cloudinary: req.file.filename
+      });
+      
+      next();
+    } catch (uploadError) {
+      logger.error('Cloudinary upload failed:', uploadError);
+      return sendErrorResponse(
+        res,
+        STATUS.INTERNAL_ERROR,
+        'File upload to cloud storage failed',
+        uploadError.message
+      );
+    }
   });
 };
