@@ -6,8 +6,15 @@ const conversationRouter = express.Router();
 
 conversationRouter.use(authenticate);
 
-conversationRouter.get('/:documentId', conversationController.getConversations);
+conversationRouter.get('/', conversationController.getConversations);
 
+conversationRouter.get('/:conversationId', conversationController.getConversationsById);
+
+conversationRouter.patch('/:conversationId', conversationController.updateConversationTitle);
+
+conversationRouter.delete('/:conversationId', conversationController.deleteConversation);
+
+conversationRouter.get('/stats', conversationController.conversationStats);
 
 
 export default conversationRouter;

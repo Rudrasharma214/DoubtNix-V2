@@ -6,5 +6,5 @@ const routes = express.Router();
 
 routes.use('/auth', authRouter);
 routes.use('/documents', documentRouter);
-routes.use('conversations', conversationRouter);
+routes.use('/conversations', conversationRouter);
 export default routes;

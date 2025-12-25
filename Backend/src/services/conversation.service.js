@@ -1,9 +1,9 @@
 import STATUS from '../constants/statusCode.js';
 import Conversation from '../models/Conversation.model.js';
+import Document from '../models/Document.model.js';
 
 
 export const getConversations = async ({
-    documentId,
     userId,
     page,
     limit,
@@ -21,7 +21,6 @@ export const getConversations = async ({
     const offset = (page - 1) * limit;
 
     let query = {
-        documentId,
         userId
     };
 
@@ -48,4 +47,176 @@ export const getConversations = async ({
             }
         }
     };
+};
+
+export const getConversationById = async (conversationId, userId) => {
+    if(!conversationId || !userId) {
+        return {
+            success: false,
+            status: STATUS.BAD_REQUEST,
+            message: 'Conversation ID and User ID are required',
+            errors: ['Missing conversationId or userId']
+        };
+    }
+
+    const conversation = await Conversation.findOne({ _id: conversationId, userId });
+
+    if(!conversation) {
+        return {
+            success: false,
+            status: STATUS.NOT_FOUND,
+            message: 'Conversation not found',
+            errors: ['No conversation found with the provided ID for this user']
+        };
+    }   
+
+    return {
+        success: true,
+        status: STATUS.OK,
+        message: 'Conversation retrieved successfully',
+        data: conversation
+    };
+};
+
+export const updateConversationTitle = async (conversationId, userId, title) => {
+    if(!conversationId || !userId || !title) {
+        return {
+            success: false,
+            status: STATUS.BAD_REQUEST,
+            message: 'Conversation ID, User ID, and Title are required',
+            errors: ['Missing conversationId, userId, or title']
+        };
+    }
+
+    const conversation = await Conversation.findOneAndUpdate(
+        { _id: conversationId, userId },
+        { title },
+        { new: true }
+    );
+
+    if(!conversation) {
+        return {
+            success: false,
+            status: STATUS.NOT_FOUND,
+            message: 'Conversation not found or title update failed',
+            errors: ['No conversation found with the provided ID for this user']
+        };
+    }
+
+    return {
+        success: true,
+        status: STATUS.OK,
+        message: 'Conversation title updated successfully',
+        data: conversation
+    };
+};
+
+export const deleteConversation = async (conversationId, userId) => {
+    if(!conversationId || !userId) {
+        return {
+            success: false,
+            status: STATUS.BAD_REQUEST,
+            message: 'Conversation ID and User ID are required',
+            errors: ['Missing conversationId or userId']
+        };
+    }
+
+    const conversation = await Conversation.findOneAndDelete({ _id: conversationId, userId });
+
+    if(!conversation) {
+        return {
+            success: false,
+            status: STATUS.NOT_FOUND,
+            message: 'Conversation not found or deletion failed',
+            errors: ['No conversation found with the provided ID for this user']
+        };
+    }
+
+    return {
+        success: true,
+        status: STATUS.OK,
+        message: 'Conversation deleted successfully',
+        data: conversation
+    };
+};
+
+export const getConversationStats = async (userId) => {
+    if(!userId) {
+        return {
+            success: false,
+            status: STATUS.BAD_REQUEST,
+            message: 'User ID is required',
+            errors: ['Missing userId']
+        };
+    }
+
+    try {
+        // Get user's documents first
+        const userDocuments = await Document.find({ userId }).select('_id');
+        const userDocumentIds = userDocuments.map(doc => doc._id);
+
+        const totalConversations = await Conversation.countDocuments({
+            isActive: true,
+            documentId: { $in: userDocumentIds }
+        });
+        const totalDocuments = userDocuments.length;
+        
+        // Get conversations from last 7 days
+        const weekAgo = new Date();
+        weekAgo.setDate(weekAgo.getDate() - 7);
+        
+        const recentConversations = await Conversation.countDocuments({
+            isActive: true,
+            documentId: { $in: userDocumentIds },
+            lastActivity: { $gte: weekAgo }
+        });
+
+        // Get most active documents (user's documents only)
+        const activeDocuments = await Conversation.aggregate([
+            { $match: {
+                isActive: true,
+                documentId: { $in: userDocumentIds }
+            }},
+            { $group: { 
+                _id: '$documentId', 
+                conversationCount: { $sum: 1 },
+                lastActivity: { $max: '$lastActivity' }
+            }},
+            { $sort: { conversationCount: -1 } },
+            { $limit: 5 },
+            { $lookup: {
+                from: 'documents',
+                localField: '_id',
+                foreignField: '_id',
+                as: 'document'
+            }},
+            { $unwind: '$document' },
+            { $project: {
+                documentName: '$document.filename',
+                fileType: '$document.fileType',
+                conversationCount: 1,
+                lastActivity: 1
+            }}
+        ]);
+
+        return {
+            success: true,
+            status: STATUS.OK,
+            message: 'Conversation statistics retrieved successfully',
+            data: {
+                totalConversations,
+                totalDocuments,
+                recentConversations,
+                activeDocuments
+            }
+        };
+
+    } catch (error) {
+        return {
+            success: false,
+            status: STATUS.INTERNAL_ERROR,
+            message: 'Failed to get conversation statistics',
+            errors: error.message
+        };
+    }
 };
