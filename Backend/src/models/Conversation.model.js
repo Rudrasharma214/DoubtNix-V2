@@ -19,12 +19,6 @@ const ConversationSchema = new mongoose.Schema(
             required: true,
         },
 
-        sessionId: {
-            type: String,
-            required: true,
-            index: true
-        },
-
         isActive: {
             type: Boolean,
             default: true
@@ -40,7 +34,7 @@ const ConversationSchema = new mongoose.Schema(
     }
 );
 
-ConversationSchema.index({ documentId: 1 });
+ConversationSchema.index({ documentId: 1, userId: 1 }, { unique: true });
 
 const Conversation = mongoose.model('Conversation', ConversationSchema);
 

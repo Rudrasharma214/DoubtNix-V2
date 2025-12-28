@@ -24,6 +24,12 @@ const MessageSchema = new mongoose.Schema(
             required: true,
         },
 
+        replyTo: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Message',
+            default: null
+        },
+
         isStale: {
             type: Boolean,
             default: false,

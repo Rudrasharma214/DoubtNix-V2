@@ -6,7 +6,7 @@ import logger from '../config/logger.js';
 export const askDoubt = async (req, res, next) => {
     try {
         const { id: userId } = req.user;
-        const { documentId, question, sessionId, language } = req.body;
+        const { documentId, question, language } = req.body;
 
         logger.info(`User ${userId} asking question for document ${documentId}`);
 
@@ -14,7 +14,6 @@ export const askDoubt = async (req, res, next) => {
             userId,
             documentId,
             question,
-            sessionId,
             language
         });
 
@@ -42,14 +41,13 @@ export const askDoubt = async (req, res, next) => {
 export const getConversationHistory = async (req, res, next) => {
     try {
         const { id: userId } = req.user;
-        const { documentId, sessionId } = req.params;
+        const { documentId } = req.params;
 
-        logger.info(`Fetching conversation history for user ${userId}, doc ${documentId}, session ${sessionId}`);
+        logger.info(`Fetching conversation history for user ${userId}, doc ${documentId}`);
 
         const result = await doubtService.getConversationHistory({
             userId,
-            documentId,
-            sessionId
+            documentId
         });
 
         if (!result.success) {

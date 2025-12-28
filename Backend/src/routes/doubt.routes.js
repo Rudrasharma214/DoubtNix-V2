@@ -9,15 +9,15 @@ doubtRouter.use(authenticate);
 /**
  * POST /api/doubt/ask
  * Submit a question about a document
- * Body: { documentId, question, sessionId?, language? }
+ * Body: { documentId, question, language? }
  */
 doubtRouter.post('/ask', doubtController.askDoubt);
 
 /**
- * GET /api/doubt/conversation/:documentId/:sessionId
- * Get conversation history for a specific session
+ * GET /api/doubt/conversation/:documentId
+ * Get conversation history for a document
  */
-doubtRouter.get('/conversation/:documentId/:sessionId', doubtController.getConversationHistory);
+doubtRouter.get('/conversation/:documentId', doubtController.getConversationHistory);
 
 /**
  * GET /api/doubt/conversations/:documentId

@@ -9,7 +9,6 @@ export const askDoubt = async ({
     userId,
     documentId,
     question,
-    sessionId = null,
     language = 'english'
 }) => {
     if(!userId || !documentId || !question) {
@@ -64,24 +63,16 @@ export const askDoubt = async ({
         }
 
         // 4. Find or create conversation
-        let conversation;
-        
-        if (sessionId) {
-            // Find existing conversation by sessionId
-            conversation = await Conversation.findOne({
-                documentId,
-                userId,
-                sessionId,
-                isActive: true
-            });
-        }
+        let conversation = await Conversation.findOne({
+            documentId,
+            userId
+        });
 
         if (!conversation) {
             // Create new conversation
             conversation = new Conversation({
                 userId,
                 documentId,
-                sessionId: sessionId || `session_${Date.now()}_${Math.random().toString(36).slice(2)}`,
                 title: question.substring(0, 100), // Auto-generate title from question
                 isActive: true,
                 lastActivity: new Date()
@@ -131,11 +122,12 @@ export const askDoubt = async ({
             };
         }
 
-        // 7. Save AI response as a Message
+        // 7. Save AI response as a Message with reference to user question
         const aiMessage = new Message({
             conversationId: conversation._id,
             sender: 'assistant',
-            content: aiResponse
+            content: aiResponse,
+            replyTo: userMessage._id
         });
         await aiMessage.save();
 
@@ -154,7 +146,6 @@ export const askDoubt = async ({
             message: 'Question processed successfully',
             data: {
                 conversationId: conversation._id,
-                sessionId: conversation.sessionId,
                 question,
                 answer: aiResponse,
                 timestamp: new Date()
@@ -172,13 +163,13 @@ export const askDoubt = async ({
     }
 };
 
-export const getConversationHistory = async ({ userId, documentId, sessionId }) => {
-    if (!userId || !documentId || !sessionId) {
+export const getConversationHistory = async ({ userId, documentId }) => {
+    if (!userId || !documentId) {
         return {
             success: false,
             status: STATUS.BAD_REQUEST,
             message: 'Invalid parameters',
-            errors: ['userId, documentId, and sessionId are required']
+            errors: ['userId and documentId are required']
         };
     }
 
@@ -197,9 +188,7 @@ export const getConversationHistory = async ({ userId, documentId, sessionId }) 
         // 2. Get conversation
         const conversation = await Conversation.findOne({
             documentId,
-            userId,
-            sessionId,
-            isActive: true
+            userId
         });
 
         if (!conversation) {
@@ -207,7 +196,7 @@ export const getConversationHistory = async ({ userId, documentId, sessionId }) 
                 success: false,
                 status: STATUS.NOT_FOUND,
                 message: 'Conversation not found',
-                errors: ['No active conversation found for this session']
+                errors: ['No conversation found for this document']
             };
         }
 
@@ -224,7 +213,6 @@ export const getConversationHistory = async ({ userId, documentId, sessionId }) 
             message: 'Conversation history retrieved successfully',
             data: {
                 conversationId: conversation._id,
-                sessionId: conversation.sessionId,
                 documentInfo: {
                     id: document._id,
                     name: document.filename,
@@ -298,7 +286,6 @@ export const getDocumentConversations = async ({ userId, documentId, page = 1, l
                 });
                 return {
                     _id: conv._id,
-                    sessionId: conv.sessionId,
                     title: conv.title,
                     lastActivity: conv.lastActivity,
                     messageCount
