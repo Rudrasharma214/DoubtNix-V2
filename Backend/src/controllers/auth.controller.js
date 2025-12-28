@@ -152,47 +152,38 @@ export const logout = async (req, res, next) => {
 
 export const refreshToken = async (req, res, next) => {
   try {
-    // refresh token should come from httpOnly cookie
-    const refreshToken = req.cookies?.refreshToken;
+    const incomingToken = req.cookies?.refreshToken;
 
-    if (!refreshToken) {
+    if (!incomingToken) {
       return sendErrorResponse(
         res,
         STATUS.UNAUTHORIZED,
-        "Refresh token missing",
-        null
+        'Refresh token missing'
       );
     }
 
-    const result = await authService.refreshToken(refreshToken);
+    const result = await authService.refreshToken(incomingToken);
 
     if (!result.success) {
       return sendErrorResponse(
         res,
         result.status,
-        result.message,
-        result.errors || null
+        result.message
       );
     }
 
-    // set new refresh token in cookie
-    res.cookie("refreshToken", result.data.refreshToken, {
+    res.cookie('refreshToken', result.data.refreshToken, {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // must match refresh expiry
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    sendResponse(
-      res,
-      STATUS.OK,
-      "Token refreshed successfully",
-      {
-        accessToken: result.data.accessToken,
-      }
-    );
-  } catch (error) {
-    next(error);
+    return sendResponse(res, STATUS.OK, 'Token refreshed', {
+      accessToken: result.data.accessToken,
+    });
+  } catch (err) {
+    next(err);
   }
 };
 

@@ -1,6 +1,7 @@
 import User from "../models/User.model.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import STATUS from "../constants/statusCode.js";
 import OTP from "../models/Otp.model.js";
 import { generateOtp } from "../utils/generateOtp.js";
@@ -8,6 +9,23 @@ import { generateAccessToken, generateRefreshToken } from "../utils/generateToke
 import { env } from "../config/env.js";
 import { verifyOtp } from "../utils/otpCompare.js";
 import eventBus from "../events/eventBus.js";
+
+// Hash refresh token using crypto (faster than bcrypt)
+const hashRefreshToken = (token) => {
+  return crypto
+    .createHmac('sha256', env.JWT_REFRESH_SECRET)
+    .update(token)
+    .digest('hex');
+};
+
+// Verify refresh token using crypto
+const verifyRefreshToken = (plainToken, hashedToken) => {
+  const computed = crypto
+    .createHmac('sha256', env.JWT_REFRESH_SECRET)
+    .update(plainToken)
+    .digest('hex');
+  return crypto.timingSafeEqual(Buffer.from(computed), Buffer.from(hashedToken));
+};
 
 export const registerUser = async (data) => {
   const exists = await User.exists({ email: data.email });
@@ -75,10 +93,12 @@ export const verifyEmailOtp = async (userId, otp) => {
     { new: true }
   );
 
-  const [accessToken, refreshToken, hashedRefresh] = await Promise.all([
-    generateAccessToken({ userId }),
-    generateRefreshToken({ userId }),
-    bcrypt.hash(generateRefreshToken({ userId }), 10),
+  const refreshToken = generateRefreshToken({ userId });
+  const accessToken = await generateAccessToken({ userId });
+  const hashedRefresh = hashRefreshToken(refreshToken);
+
+  const [accessTokenResult] = await Promise.all([
+    Promise.resolve(accessToken),
   ]);
 
   await User.findByIdAndUpdate(userId, {
@@ -161,11 +181,8 @@ export const loginUser = async (email, password) => {
   }
 
   const refreshToken = generateRefreshToken({ userId: user._id });
-
-  const [accessToken, hashedRefresh] = await Promise.all([
-    generateAccessToken({ userId: user._id }),
-    bcrypt.hash(refreshToken, 10),
-  ]);
+  const accessToken = await generateAccessToken({ userId: user._id });
+  const hashedRefresh = hashRefreshToken(refreshToken);
 
   await User.findByIdAndUpdate(user._id, {
     refreshToken: hashedRefresh,
@@ -204,11 +221,8 @@ export const verifyLoginOtp = async (userId, otp) => {
   }
 
   const refreshToken = generateRefreshToken({ userId });
-
-  const [accessToken, hashedRefresh] = await Promise.all([
-    generateAccessToken({ userId }),
-    bcrypt.hash(refreshToken, 10),
-  ]);
+  const accessToken = await generateAccessToken({ userId });
+  const hashedRefresh = hashRefreshToken(refreshToken);
 
   await User.findByIdAndUpdate(userId, {
     refreshToken: hashedRefresh,
@@ -269,10 +283,22 @@ export const refreshToken = async (incomingRefreshToken) => {
       };
     }
 
-    const isValid = await bcrypt.compare(
-      incomingRefreshToken,
-      user.refreshToken
-    );
+    let isValid = false;
+    try {
+      // Try crypto verification first (new method)
+      isValid = verifyRefreshToken(incomingRefreshToken, user.refreshToken);
+    } catch (error) {
+      // If crypto fails, try bcrypt (old method - for backward compatibility)
+      try {
+        isValid = await bcrypt.compare(incomingRefreshToken, user.refreshToken);
+      } catch (bcryptError) {
+        return {
+          success: false,
+          status: STATUS.UNAUTHORIZED,
+          message: "Invalid refresh token",
+        };
+      }
+    }
 
     if (!isValid) {
       return {
@@ -290,7 +316,7 @@ export const refreshToken = async (incomingRefreshToken) => {
       userId: user._id,
     });
 
-    user.refreshToken = await bcrypt.hash(newRefreshToken, 12);
+    user.refreshToken = hashRefreshToken(newRefreshToken);
     await user.save();
 
     return {
@@ -311,7 +337,7 @@ export const refreshToken = async (incomingRefreshToken) => {
 };
 
 export const getUserProfile = async (userId) => {
-  const user = await User.findById(userId).select('-password -refreshToken');
+  const user = await User.findById(userId).select('-password -refreshToken -updatedAt -createdAt -isEmailVerified -lastLogin');
   if (!user) {
     return {
       success: false,

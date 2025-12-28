@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { refreshToken } from './auth.service';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
@@ -8,6 +9,18 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Token refresh queue management
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) prom.reject(error);
+    else prom.resolve(token);
+  });
+  failedQueue = [];
+};
 
 // Request interceptor to add accessToken to all requests
 api.interceptors.request.use(
@@ -23,17 +36,47 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor to handle errors
+// Response interceptor to handle errors and refresh tokens
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    // Handle 401 Unauthorized
-    // DISABLED for debugging logout API
-    // if (error.response?.status === 401) {
-    //   localStorage.removeItem('accessToken');
-    //   window.location.href = '/login';
-    // }
-    console.log('API Error:', error.response?.status, error.response?.data?.message);
+  async (error) => {
+    const originalRequest = error.config;
+
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        }).then(token => {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          return api(originalRequest);
+        }).catch(err => Promise.reject(err));
+      }
+
+      originalRequest._retry = true;
+      isRefreshing = true;
+
+      try {
+        const res = await refreshToken();
+        const newAccessToken = res.data?.accessToken || res.data?.data?.accessToken;
+
+        if (newAccessToken) {
+          localStorage.setItem('accessToken', newAccessToken);
+          api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+          processQueue(null, newAccessToken);
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        processQueue(refreshError, null);
+        localStorage.removeItem('accessToken');
+        delete api.defaults.headers.common.Authorization;
+        window.location.href = '/login';
+        return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
+      }
+    }
+
     return Promise.reject(error);
   }
 );
