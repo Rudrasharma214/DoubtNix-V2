@@ -1,8 +1,8 @@
-import { createContext, useState, useContext } from 'react';
+import { createContext, useState, useContext, useEffect } from 'react';
 import apiClient from '../services/api.js';
 import { logout as logoutService } from '../services/auth.service.js';
 
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [authState, setAuthState] = useState({
@@ -12,9 +12,52 @@ export const AuthProvider = ({ children }) => {
     error: null,
   });
 
+  // Initialize auth state on app load
+  useEffect(() => {
+    const initializeAuth = async () => {
+      const token = localStorage.getItem('accessToken');
+      
+      if (token) {
+        // Set the token in the API client
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        
+        try {
+          const response = await apiClient.get('/auth/me');
+          setAuthState({
+            isAuthenticated: true,
+            user: response.data.data || response.data.user,
+            loading: false,
+            error: null,
+          });
+        } catch (error) {
+          console.error('Auth initialization failed:', error);
+          localStorage.removeItem('accessToken');
+          delete apiClient.defaults.headers.common['Authorization'];
+          setAuthState({
+            isAuthenticated: false,
+            user: null,
+            loading: false,
+            error: error.response?.data?.message || 'Failed to authenticate',
+          });
+        }
+      } else {
+        // No token, not authenticated
+        setAuthState({
+          isAuthenticated: false,
+          user: null,
+          loading: false,
+          error: null,
+        });
+      }
+    };
+
+    initializeAuth();
+  }, []);
+
   const setAccessToken = (token) => {
     if (token) {
       localStorage.setItem('accessToken', token);
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setAuthState(prev => ({
         ...prev,
         isAuthenticated: true,

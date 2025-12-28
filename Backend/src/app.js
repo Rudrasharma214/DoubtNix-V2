@@ -13,7 +13,7 @@ app.use(cookieParser());
 app.use(express.json());
 
 const allowedOrigin = env.NODE_ENV === 'production' ? 
-                    env.CLIENT_URL : 'http://localhost:3000';
+                    env.CLIENT_URL : 'http://localhost:5173';
 
 app.use(cors({
   origin: allowedOrigin,

@@ -48,7 +48,7 @@ export const registerUser = async (data) => {
 };
 
 export const verifyEmailOtp = async (userId, otp) => {
-  const record = await OTP.findOneAndDelete({ userId });
+  const record = await OTP.findOne({ userId });
   if (!record) {
     return {
       success: false,

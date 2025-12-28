@@ -6,7 +6,7 @@ export const register = async (userData) => {
 }
 
 export const verifyEmail = async (data) => {
-  const response = await api.get(`/auth/verify-email`, { data: { userId: data.userId, otp: data.otp } });
+  const response = await api.post(`/auth/verify-email`, { userId: data.userId, otp: data.otp });
   return response.data;
 }
 

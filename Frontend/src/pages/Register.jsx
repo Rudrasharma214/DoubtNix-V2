@@ -63,22 +63,30 @@ const Register = () => {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
-    try {
-      await register({
+    register(
+      {
         name: formData.name.trim(),
         email: formData.email.trim(),
         password: formData.password,
-      }, {
-        onSuccess: () => {
-          navigate('/login');
+      },
+      {
+        onSuccess: (data) => {
+          setIsSubmitting(false);
+          // Navigate to email verification with userId
+          if (data.data?.userId || data.data?.id) {
+            const userId = data.data.userId || data.data.id;
+            navigate(`/email/verify/${userId}`);
+          } else {
+            // Fallback if no userId in response
+            navigate('/login');
+          }
         },
         onError: (error) => {
-          setErrors({ submit: error.message || 'Registration failed' });
+          setIsSubmitting(false);
+          setErrors({ submit: error.response?.data?.message || 'Registration failed' });
         }
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+      }
+    );
   };
 
 //   if (isLoading) {
