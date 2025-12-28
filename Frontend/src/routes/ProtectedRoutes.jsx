@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/Auth/useAuth';
+import Dashboard from '../pages/Dashboard';
 
 /**
  * ProtectedRoute Component: Prevents access without authentication
@@ -37,6 +38,11 @@ function ProtectedRoute({ component: Component }) {
 /**
  * ProtectedRoutes: Routes that require authentication
  */
-export const protectedRoutes = [];
+export const protectedRoutes = [
+  {
+    path: '/dashboard',
+    element: <ProtectedRoute component={Dashboard} />,
+  },
+];
 
 export default ProtectedRoute;

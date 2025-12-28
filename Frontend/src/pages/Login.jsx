@@ -35,12 +35,9 @@ const LoginPage = () => {
         password: formData.password,
       });
 
-      if (response.success && response.data?.token) {
-        // Save token and update auth state
-        auth.setAccessToken(response.data.token);
-        
-        // Navigate to welcome page
-        navigate('/welcome');
+      if (response.success && response.data?.accessToken) {
+        auth.setAccessToken(response.data.accessToken);
+        navigate('/dashboard');
       } else {
         setError(response.message || 'Login failed');
       }

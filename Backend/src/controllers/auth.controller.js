@@ -126,7 +126,7 @@ export const verifyLoginOtp = async (req, res, next) => {
 
 export const logout = async (req, res, next) => {
   try {
-    const userId = req.userId;
+    const { id:userId } = req.user;
     const result = await authService.logoutUser(userId);
 
     if (!result.success) {

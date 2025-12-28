@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Brain, MessageSquare, Home, User, LogOut, Settings, Sun, Moon } from "lucide-react";
+import toast from "react-hot-toast";
 import { useAuth } from "../hooks/Auth/useAuth";
 import { useTheme } from "../context/ThemeContext";
 
 const Layout = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAuthenticated, user, logout } = useAuth();
   const { isDarkMode, toggleTheme } = useTheme();
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   const navigation = [
-    { name: "Home", href: "/", icon: Home },
+    { name: "Home", href: "/dashboard", icon: Home },
     { name: "Conversations", href: "/conversations", icon: MessageSquare },
   ];
 
@@ -23,8 +25,16 @@ const Layout = ({ children }) => {
   };
 
   const handleLogout = async () => {
-    await logout();
-    setIsUserMenuOpen(false);
+    try {
+      await logout();
+      setIsUserMenuOpen(false);
+      toast.success("Logged out successfully");
+      navigate("/welcome");
+    } catch (error) {
+      console.error('Logout error:', error.message);
+      toast.error(error.message || "Logout failed. Please try again.");
+      setIsUserMenuOpen(false);
+    }
   };
 
   // Don't show navigation for auth pages

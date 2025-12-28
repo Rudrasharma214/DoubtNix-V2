@@ -23,12 +23,12 @@ const EmailVerification = () => {
       auth.setAccessToken(data.data.accessToken);
     }
 
-    setSuccessMessage('Email verified successfully! Redirecting to home...');
+    setSuccessMessage('Email verified successfully! Redirecting to dashboard...');
     setError('');
     
-    // Redirect to welcome page after 1.5 seconds
+    // Redirect to dashboard after 1.5 seconds
     setTimeout(() => {
-      navigate('/welcome');
+      navigate('/dashboard');
     }, 1500);
   };
 

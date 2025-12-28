@@ -16,7 +16,7 @@ export const login = async (credentials) => {
 }
 
 export const verifyLoginEmail = async (data) => {
-  const response = await api.get(`/auth/verify-login-otp`, { data: { userId: data.userId, otp: data.otp } });
+  const response = await api.get(`/auth/verify-login-otp`, { userId: data.userId, otp: data.otp });
   return response.data;
 }
 
@@ -29,3 +29,8 @@ export const refreshToken = async () => {
   const response = await api.post('/auth/refresh-token');
   return response.data;
 }
+
+export const getUser = async () => {
+  const response = await api.get('/auth/me');
+  return response.data;
+};

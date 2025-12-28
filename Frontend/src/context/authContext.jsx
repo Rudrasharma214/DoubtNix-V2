@@ -1,117 +1,76 @@
-import { createContext, useState, useContext, useEffect } from 'react';
-import apiClient from '../services/api.js';
+import { createContext, useContext, useMemo, useState, useEffect } from 'react';
 import { logout as logoutService } from '../services/auth.service.js';
+import { useGetUser } from '../hooks/Auth/useQueries.js';
+import { useQueryClient } from '@tanstack/react-query';
 
-export const AuthContext = createContext();
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [authState, setAuthState] = useState({
-    isAuthenticated: false,
-    user: null,
-    loading: true,
-    error: null,
+  const queryClient = useQueryClient();
+  const [token, setTokenState] = useState(() => localStorage.getItem('accessToken'));
+
+  // Fetch user ONLY if token exists
+  const {
+    data,
+    isLoading,
+    isError,
+    error,
+  } = useGetUser({
+    enabled: Boolean(token),
   });
 
-  // Initialize auth state on app load
-  useEffect(() => {
-    const initializeAuth = async () => {
-      const token = localStorage.getItem('accessToken');
-      
-      if (token) {
-        // Set the token in the API client
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        
-        try {
-          const response = await apiClient.get('/auth/me');
-          setAuthState({
-            isAuthenticated: true,
-            user: response.data.data || response.data.user,
-            loading: false,
-            error: null,
-          });
-        } catch (error) {
-          console.error('Auth initialization failed:', error);
-          localStorage.removeItem('accessToken');
-          delete apiClient.defaults.headers.common['Authorization'];
-          setAuthState({
-            isAuthenticated: false,
-            user: null,
-            loading: false,
-            error: error.response?.data?.message || 'Failed to authenticate',
-          });
-        }
-      } else {
-        // No token, not authenticated
-        setAuthState({
-          isAuthenticated: false,
-          user: null,
-          loading: false,
-          error: null,
-        });
-      }
-    };
+  const user = data?.data || data?.user || data || null;
+  const isAuthenticated = Boolean(token && user);
 
-    initializeAuth();
-  }, []);
-
-  const setAccessToken = (token) => {
-    if (token) {
-      localStorage.setItem('accessToken', token);
-      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      setAuthState(prev => ({
-        ...prev,
-        isAuthenticated: true,
-      }));
-    }
+  const setAccessToken = (newToken) => {
+    localStorage.setItem('accessToken', newToken);
+    setTokenState(newToken);
+    // Invalidate the user query to trigger a fresh fetch
+    queryClient.invalidateQueries({ queryKey: ['user'] });
   };
 
-  const getAccessToken = () => {
-    return localStorage.getItem('accessToken');
-  };
-
-  const fetchUserData = async () => {
-    try {
-      const response = await apiClient.get('/auth/me');
-      setAuthState(prev => ({
-        ...prev,
-        user: response.data.data || response.data.user,
-        loading: false,
-        error: null,
-      }));
-    } catch (error) {
-      setAuthState(prev => ({
-        ...prev,
-        loading: false,
-        error: error.response?.data?.message || 'Failed to fetch user data',
-      }));
-    }
-  };
+  const getAccessToken = () => localStorage.getItem('accessToken');
 
   const logout = async () => {
     try {
-      await logoutService();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
+      // API interceptor will automatically attach token
+      const response = await logoutService();
+      console.log('Logout successful:', response);
       localStorage.removeItem('accessToken');
-      setAuthState({
-        isAuthenticated: false,
-        user: null,
-        loading: false,
-        error: null,
-      });
+      setTokenState(null);
+      queryClient.clear();
+      
+      return { success: true, message: 'Logged out successfully' };
+    } catch (err) {
+      const errorMessage = err.response?.data?.message || err.message || 'Logout failed';
+      localStorage.removeItem('accessToken');
+      setTokenState(null);
+      queryClient.clear();
+      
+      throw new Error(errorMessage);
     }
   };
 
-  const value = {
-    ...authState,
-    setAccessToken,
-    getAccessToken,
-    fetchUserData,
-    logout,
-  };
+  const value = useMemo(
+    () => ({
+      isAuthenticated,
+      user,
+      loading: isLoading,
+      error: isError
+        ? error?.response?.data?.message || 'Failed to fetch user'
+        : null,
+      setAccessToken,
+      getAccessToken,
+      logout,
+    }),
+    [isAuthenticated, user, isLoading, isError, error]
+  );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => {
