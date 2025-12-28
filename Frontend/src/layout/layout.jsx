@@ -52,7 +52,7 @@ const Layout = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2 flex-shrink-0">
+            <Link to="/dashboard" className="flex items-center space-x-2 flex-shrink-0">
               <Brain className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 dark:text-primary-400" />
               <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                 DoubtNix
