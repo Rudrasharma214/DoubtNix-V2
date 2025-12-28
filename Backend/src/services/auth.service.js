@@ -288,17 +288,12 @@ export const refreshToken = async (incomingRefreshToken) => {
       // Try crypto verification first (new method)
       isValid = verifyRefreshToken(incomingRefreshToken, user.refreshToken);
     } catch (error) {
-      // If crypto fails, try bcrypt (old method - for backward compatibility)
-      try {
-        isValid = await bcrypt.compare(incomingRefreshToken, user.refreshToken);
-      } catch (bcryptError) {
-        return {
-          success: false,
-          status: STATUS.UNAUTHORIZED,
-          message: "Invalid refresh token",
-        };
-      }
-    }
+      return {
+        success: false,
+        status: STATUS.UNAUTHORIZED,
+        message: "Invalid refresh token",
+      };      
+    };
 
     if (!isValid) {
       return {
