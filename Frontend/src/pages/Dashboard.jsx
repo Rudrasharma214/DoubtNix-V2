@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
 import { FileText, Upload, MessageSquare, Brain } from 'lucide-react';
 import { useGetDocuments } from '../hooks/Document/useQueries';
 import { useUploadDocument, useDeleteDocument } from '../hooks/Document/useMutation';
@@ -8,6 +9,8 @@ import toast from 'react-hot-toast';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const pollingIntervalRef = useRef(null);
+  const uploadedDocIdRef = useRef(null); // Track newly uploaded document ID
   
   // Fetch documents
   const { data: documentsResponse, isLoading, refetch } = useGetDocuments({ page: 1, limit: 20 });
@@ -18,14 +21,59 @@ const Dashboard = () => {
   
   const documents = documentsResponse?.data?.documents || [];
 
+  // Polling function to check document status
+  const startPolling = () => {
+    // Poll every 2 seconds to check if processing is complete
+    pollingIntervalRef.current = setInterval(async () => {
+      await refetch();
+    }, 2000);
+  };
+
+  // Stop polling
+  const stopPolling = () => {
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
+  };
+
+  useEffect(() => {
+    const hasProcessing = documents.some(doc => doc.processingStatus === 'processing' || doc.processingStatus === 'pending');
+    if (uploadedDocIdRef.current) {
+      const uploadedDoc = documents.find(doc => doc._id === uploadedDocIdRef.current);
+      
+      if (uploadedDoc && uploadedDoc.processingStatus === 'completed') {
+        toast.success('Document processing completed!');
+        navigate(`/document/${uploadedDocIdRef.current}`);
+        uploadedDocIdRef.current = null; 
+      }
+    }
+    
+    if (hasProcessing) {
+      startPolling();
+    } else {
+      stopPolling();
+    }
+
+    return () => stopPolling();
+  }, [documents, navigate]);
+
   const handleFileUpload = async (file) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
       
-      await uploadMutation.mutateAsync(formData);
-      toast.success('File uploaded successfully!');
-      await refetch(); // Refetch documents after upload
+      const response = await uploadMutation.mutateAsync(formData);
+      toast.success('File uploaded successfully! Processing started...');
+      
+      let docId = response.data.documentId || response.data._id;
+      
+      if (docId) {
+        uploadedDocIdRef.current = docId;
+      }
+      
+      await refetch();
+      startPolling();
     } catch (error) {
       toast.error(error.message || 'Failed to upload file');
     }

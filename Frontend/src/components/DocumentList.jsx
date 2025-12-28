@@ -119,7 +119,7 @@ const DocumentList = ({ documents, loading, onDocumentClick, onDeleteDocument })
               {/* File Info */}
               <div className="flex-1 min-w-0">
                 <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white truncate">
-                  {document.originalName}
+                  {document.filename}
                 </h3>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-xs sm:text-sm text-gray-500 dark:text-gray-400 mt-1 space-y-1 sm:space-y-0">
                   <span className="uppercase font-medium">

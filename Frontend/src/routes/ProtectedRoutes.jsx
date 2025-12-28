@@ -2,6 +2,7 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/Auth/useAuth';
 import Dashboard from '../pages/Dashboard';
 import Conversation from '../pages/Conversation';
+import ChatPage from '../pages/ChatPage';
 
 /**
  * ProtectedRoute Component: Prevents access without authentication
@@ -46,7 +47,7 @@ export const protectedRoutes = [
   },
   {
     path: '/document/:documentId',
-    element: <ProtectedRoute component={Conversation} />,
+    element: <ProtectedRoute component={ChatPage} />,
   },
   {
     path: '/conversations',
