@@ -1,6 +1,7 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../hooks/Auth/useAuth';
 import Dashboard from '../pages/Dashboard';
+import Conversation from '../pages/Conversation';
 
 /**
  * ProtectedRoute Component: Prevents access without authentication
@@ -43,6 +44,18 @@ export const protectedRoutes = [
     path: '/dashboard',
     element: <ProtectedRoute component={Dashboard} />,
   },
+  {
+    path: '/document/:documentId',
+    element: <ProtectedRoute component={Conversation} />,
+  },
+  {
+    path: '/conversations',
+    element: <ProtectedRoute component={Conversation} />,
+  },
+  {
+    path: '/conversations/:conversationId',
+    element: <ProtectedRoute component={Conversation} />,
+  }
 ];
 
 export default ProtectedRoute;

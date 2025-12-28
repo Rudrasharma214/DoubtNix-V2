@@ -1,6 +1,50 @@
-import { FileText, Upload, MessageSquare, Brain } from 'lucide-react'
+import { useNavigate } from 'react-router-dom';
+import { FileText, Upload, MessageSquare, Brain } from 'lucide-react';
+import { useGetDocuments } from '../hooks/Document/useQueries';
+import { useUploadDocument, useDeleteDocument } from '../hooks/Document/useMutation';
+import DocumentList from '../components/DocumentList';
+import FileUpload from '../components/FileUpload';
+import toast from 'react-hot-toast';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+  
+  // Fetch documents
+  const { data: documentsResponse, isLoading, refetch } = useGetDocuments({ page: 1, limit: 20 });
+  
+  // Upload and delete mutations
+  const uploadMutation = useUploadDocument();
+  const deleteMutation = useDeleteDocument();
+  
+  const documents = documentsResponse?.data?.documents || [];
+
+  const handleFileUpload = async (file) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      
+      await uploadMutation.mutateAsync(formData);
+      toast.success('File uploaded successfully!');
+      await refetch(); // Refetch documents after upload
+    } catch (error) {
+      toast.error(error.message || 'Failed to upload file');
+    }
+  };
+
+  const handleDocumentClick = (documentId) => {
+    navigate(`/document/${documentId}`);
+  };
+
+  const handleDeleteDocument = async (documentId) => {
+    try {
+      await deleteMutation.mutateAsync(documentId);
+      toast.success('Document deleted successfully');
+      await refetch(); // Refetch documents after deletion
+    } catch (error) {
+      toast.error('Failed to delete document');
+    }
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8 px-4 sm:px-8 py-10 max-w-7xl mx-auto">
       {/* Hero Section - Styled like Homedash Hero */}
@@ -55,7 +99,7 @@ const Dashboard = () => {
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6">
           Upload a Document
         </h2>
-        {/* FileUpload component will go here */}
+        <FileUpload onFileUpload={handleFileUpload} uploading={uploadMutation.isPending} />
       </div>
 
       {/* Recent Documents Section */}
@@ -66,7 +110,12 @@ const Dashboard = () => {
           </h2>
         </div>
 
-        {/* DocumentList component will go here */}
+        <DocumentList
+          documents={documents}
+          loading={isLoading}
+          onDocumentClick={handleDocumentClick}
+          onDeleteDocument={handleDeleteDocument}
+        />
       </div>
     </div>
   )
