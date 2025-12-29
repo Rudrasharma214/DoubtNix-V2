@@ -238,149 +238,7 @@ export const getConversationHistory = async ({ userId, documentId }) => {
     }
 };
 
-export const getDocumentConversations = async ({ userId, documentId, page = 1, limit = 10 }) => {
-    if (!userId || !documentId) {
-        return {
-            success: false,
-            status: STATUS.BAD_REQUEST,
-            message: 'Invalid parameters',
-            errors: ['userId and documentId are required']
-        };
-    }
-
-    try {
-        // 1. Verify document ownership
-        const document = await Document.findOne({ _id: documentId, userId });
-        if (!document) {
-            return {
-                success: false,
-                status: STATUS.NOT_FOUND,
-                message: 'Document not found or access denied',
-                errors: ['No document found with the provided ID for this user']
-            };
-        }
-
-        // 2. Get conversations for document
-        const offset = (page - 1) * limit;
-        const conversations = await Conversation.find({
-            documentId,
-            userId,
-            isActive: true
-        })
-            .skip(offset)
-            .limit(limit)
-            .sort({ lastActivity: -1 })
-            .lean();
-
-        const total = await Conversation.countDocuments({
-            documentId,
-            userId,
-            isActive: true
-        });
-
-        // Get message count for each conversation
-        const conversationsWithCounts = await Promise.all(
-            conversations.map(async (conv) => {
-                const messageCount = await Message.countDocuments({
-                    conversationId: conv._id
-                });
-                return {
-                    _id: conv._id,
-                    title: conv.title,
-                    lastActivity: conv.lastActivity,
-                    messageCount
-                };
-            })
-        );
-
-        return {
-            success: true,
-            status: STATUS.OK,
-            message: 'Conversations retrieved successfully',
-            data: {
-                documentInfo: {
-                    id: document._id,
-                    name: document.filename,
-                    type: document.fileType
-                },
-                conversations: conversationsWithCounts,
-                pagination: {
-                    page,
-                    limit,
-                    total,
-                    pages: Math.ceil(total / limit)
-                }
-            }
-        };
-    } catch (error) {
-        logger.error(`Error fetching document conversations:`, error);
-        return {
-            success: false,
-            status: STATUS.INTERNAL_ERROR,
-            message: 'Failed to fetch conversations',
-            errors: [error.message]
-        };
-    }
-};
-
-export const getSuggestedQuestions = async ({ userId, documentId }) => {
-    if (!userId || !documentId) {
-        return {
-            success: false,
-            status: STATUS.BAD_REQUEST,
-            message: 'Invalid parameters',
-            errors: ['userId and documentId are required']
-        };
-    }
-
-    try {
-        // 1. Verify document ownership
-        const document = await Document.findOne({ _id: documentId, userId });
-        if (!document) {
-            return {
-                success: false,
-                status: STATUS.NOT_FOUND,
-                message: 'Document not found or access denied',
-                errors: ['No document found with the provided ID for this user']
-            };
-        }
-
-        // 2. Check if document has content
-        if (!document.content) {
-            return {
-                success: false,
-                status: STATUS.BAD_REQUEST,
-                message: 'Document content not available',
-                errors: ['No text extracted from document']
-            };
-        }
-
-        logger.info(`Generating suggested questions for document ${documentId}`);
-
-        // 3. Generate suggestions using Gemini
-        const suggestions = await geminiService.generateSuggestedQuestions(document.content);
-
-        return {
-            success: true,
-            status: STATUS.OK,
-            message: 'Suggested questions generated successfully',
-            data: {
-                documentId,
-                suggestions
-            }
-        };
-    } catch (error) {
-        logger.error(`Error generating suggested questions:`, error);
-        return {
-            success: false,
-            status: STATUS.INTERNAL_ERROR,
-            message: 'Failed to generate suggested questions',
-            errors: [error.message]
-        };
-    }
-};
-
-export const deleteConversation = async ({ userId, conversationId }) => {
+export const deleteConversationMessages = async ({ userId, conversationId }) => {
     if (!userId || !conversationId) {
         return {
             success: false,
@@ -391,40 +249,35 @@ export const deleteConversation = async ({ userId, conversationId }) => {
     }
 
     try {
-        // 1. Find conversation and verify ownership through document
-        const conversation = await Conversation.findById(conversationId);
+        const conversation = await Conversation.findOne({
+            _id: conversationId,
+            userId
+        });
         if (!conversation) {
             return {
                 success: false,
                 status: STATUS.NOT_FOUND,
                 message: 'Conversation not found',
-                errors: ['No conversation found with the provided ID']
+                errors: ['No conversation found with the provided ID for this user']
             };
         }
 
-        // 2. Verify ownership
-        if (conversation.userId.toString() !== userId) {
-            return {
-                success: false,
-                status: STATUS.FORBIDDEN,
-                message: 'Unauthorized access',
-                errors: ['You do not have permission to delete this conversation']
-            };
-        }
+        const messagesDeleted = await Message.deleteMany({
+            conversationId: conversation._id
+        });
 
-        // 3. Soft delete - mark as inactive
-        conversation.isActive = false;
-        await conversation.save();
-
-        logger.info(`Conversation ${conversationId} marked as inactive`);
-
+        logger.info(`Conversation ${conversationId} and its ${messagesDeleted.deletedCount} messages deleted`);
         return {
             success: true,
             status: STATUS.OK,
-            message: 'Conversation deleted successfully'
+            message: 'Conversation deleted successfully',
+            data: {
+                messagesDeleted: messagesDeleted.deletedCount
+            }
         };
+
     } catch (error) {
-        logger.error(`Error deleting conversation:`, error);
+        logger.error(`Error deleting conversation ${conversationId}:`, error);
         return {
             success: false,
             status: STATUS.INTERNAL_ERROR,

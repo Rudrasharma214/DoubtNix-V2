@@ -17,25 +17,12 @@ doubtRouter.post('/ask', doubtController.askDoubt);
  * GET /api/doubt/conversation/:documentId
  * Get conversation history for a document
  */
-doubtRouter.get('/conversation/:documentId', doubtController.getConversationHistory);
-
-/**
- * GET /api/doubt/conversations/:documentId
- * Get all conversations for a document
- * Query: ?page=1&limit=10
- */
-doubtRouter.get('/conversations/:documentId', doubtController.getDocumentConversations);
-
-/**
- * GET /api/doubt/suggestions/:documentId
- * Get AI-generated suggested questions for a document
- */
-doubtRouter.get('/suggestions/:documentId', doubtController.getSuggestedQuestions);
+doubtRouter.get('/:documentId', doubtController.getConversationHistory);
 
 /**
  * DELETE /api/doubt/conversation/:conversationId
- * Delete/clear a conversation (soft delete)
+ * Delete/clear a conversation
  */
-doubtRouter.delete('/conversation/:conversationId', doubtController.deleteConversation);
+doubtRouter.delete('/:conversationId', doubtController.deleteConversationMessages);
 
 export default doubtRouter;

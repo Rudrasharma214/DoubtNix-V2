@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { Send, FileText, ArrowLeft, Download } from 'lucide-react'
+import { Send, FileText, ArrowLeft, Trash2 } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
-import { useAskDoubtMutation } from '../hooks/Doubt/useMutation'
+import { useAskDoubtMutation, useDeleteConversationMessagesMutation } from '../hooks/Doubt/useMutation'
 import { useConversationHistoryQuery } from '../hooks/Doubt/useQueries'
 import toast from 'react-hot-toast'
 
@@ -13,8 +13,11 @@ const ChatPage = () => {
     const [input, setInput] = useState('')
 
     const askDoubtMutation = useAskDoubtMutation()
+    const deleteMessagesMutation = useDeleteConversationMessagesMutation()
     const { data: conversationHistory, isLoading: historyLoading } = useConversationHistoryQuery(documentId)
 
+    // conversationId returned inside conversationHistory.data
+    const conversationId = conversationHistory?.data?.conversationId;
     // Load conversation history on mount
     useEffect(() => {
         if (conversationHistory?.data) {
@@ -87,17 +90,32 @@ const ChatPage = () => {
                         </button>
                         <div className="min-w-0">
                             <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-                                Document Chat
+                               {conversationHistory?.data?.title || 'Start Conversation'}
                             </h1>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
-                                Document ID: {documentId?.substring(0, 8)}...
+                                {conversationHistory?.data?.documentInfo?.name || ''}
                             </p>
                         </div>
                     </div>
 
-                    {/* <button className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors">
-                        <Download className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                    </button> */}
+                    <button
+                        onClick={async () => {
+                            if (!conversationId) return;
+                            if (!window.confirm('Delete all messages in this conversation?')) return;
+
+                            try {
+                                await deleteMessagesMutation.mutateAsync(conversationId);
+                                setMessages([]);
+                                toast.success('Conversation cleared');
+                            } catch (err) {
+                                toast.error(err?.response?.data?.message || 'Failed to delete messages');
+                            }
+                        }}
+                        disabled={deleteMessagesMutation.isPending}
+                        className={`p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors ${deleteMessagesMutation.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                        <Trash2 className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                    </button>
                 </div>
             </div>
 

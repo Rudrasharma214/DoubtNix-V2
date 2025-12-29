@@ -1,4 +1,3 @@
-import STATUS from '../constants/statusCode.js';
 import { sendResponse, sendErrorResponse } from '../utils/Response.js';
 import * as doubtService from '../services/doubt.service.js';
 import logger from '../config/logger.js';
@@ -71,83 +70,14 @@ export const getConversationHistory = async (req, res, next) => {
     }
 };
 
-export const getDocumentConversations = async (req, res, next) => {
-    try {
-        const { id: userId } = req.user;
-        const { documentId } = req.params;
-        const { page = 1, limit = 10 } = req.query;
-
-        logger.info(`Fetching all conversations for user ${userId}, doc ${documentId}`);
-
-        const result = await doubtService.getDocumentConversations({
-            userId,
-            documentId,
-            page: parseInt(page),
-            limit: parseInt(limit)
-        });
-
-        if (!result.success) {
-            return sendErrorResponse(
-                res,
-                result.status,
-                result.message,
-                result.errors
-            );
-        }
-
-        return sendResponse(
-            res,
-            result.status,
-            result.message,
-            result.data
-        );
-    } catch (error) {
-        logger.error('Error in getDocumentConversations controller:', error);
-        next(error);
-    }
-};
-
-export const getSuggestedQuestions = async (req, res, next) => {
-    try {
-        const { id: userId } = req.user;
-        const { documentId } = req.params;
-
-        logger.info(`Generating suggested questions for user ${userId}, doc ${documentId}`);
-
-        const result = await doubtService.getSuggestedQuestions({
-            userId,
-            documentId
-        });
-
-        if (!result.success) {
-            return sendErrorResponse(
-                res,
-                result.status,
-                result.message,
-                result.errors
-            );
-        }
-
-        return sendResponse(
-            res,
-            result.status,
-            result.message,
-            result.data
-        );
-    } catch (error) {
-        logger.error('Error in getSuggestedQuestions controller:', error);
-        next(error);
-    }
-};
-
-export const deleteConversation = async (req, res, next) => {
+export const deleteConversationMessages = async (req, res, next) => {
     try {
         const { id: userId } = req.user;
         const { conversationId } = req.params;
 
         logger.info(`Deleting conversation ${conversationId} for user ${userId}`);
 
-        const result = await doubtService.deleteConversation({
+        const result = await doubtService.deleteConversationMessages({
             userId,
             conversationId
         });

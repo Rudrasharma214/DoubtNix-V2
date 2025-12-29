@@ -9,7 +9,7 @@ export const getConversations = async ({
     limit,
     search
 }) => {
-    if(!userId) {
+    if (!userId) {
         return {
             success: false,
             status: STATUS.BAD_REQUEST,
@@ -24,22 +24,25 @@ export const getConversations = async ({
         userId
     };
 
-    if(search) {
+    if (search) {
         query.title = { $regex: search, $options: 'i' };
     }
 
+    // populate document info directly and return plain objects
     const conversations = await Conversation.find(query)
         .skip(offset)
         .limit(limit)
-        .sort({ lastActivity: -1 });
-
+        .sort({ lastActivity: -1 })
+        .populate({ path: 'documentId', select: '_id filename fileType' })
+        .lean();
+        
     return {
         success: true,
         status: STATUS.OK,
         message: 'Conversations retrieved successfully',
         data: {
             conversations,
-            pagination:{
+            pagination: {
                 total: conversations.length,
                 page,
                 limit,
@@ -49,37 +52,8 @@ export const getConversations = async ({
     };
 };
 
-export const getConversationById = async (conversationId, userId) => {
-    if(!conversationId || !userId) {
-        return {
-            success: false,
-            status: STATUS.BAD_REQUEST,
-            message: 'Conversation ID and User ID are required',
-            errors: ['Missing conversationId or userId']
-        };
-    }
-
-    const conversation = await Conversation.findOne({ _id: conversationId, userId });
-
-    if(!conversation) {
-        return {
-            success: false,
-            status: STATUS.NOT_FOUND,
-            message: 'Conversation not found',
-            errors: ['No conversation found with the provided ID for this user']
-        };
-    }   
-
-    return {
-        success: true,
-        status: STATUS.OK,
-        message: 'Conversation retrieved successfully',
-        data: conversation
-    };
-};
-
 export const updateConversationTitle = async (conversationId, userId, title) => {
-    if(!conversationId || !userId || !title) {
+    if (!conversationId || !userId || !title) {
         return {
             success: false,
             status: STATUS.BAD_REQUEST,
@@ -94,7 +68,7 @@ export const updateConversationTitle = async (conversationId, userId, title) => 
         { new: true }
     );
 
-    if(!conversation) {
+    if (!conversation) {
         return {
             success: false,
             status: STATUS.NOT_FOUND,
@@ -112,7 +86,7 @@ export const updateConversationTitle = async (conversationId, userId, title) => 
 };
 
 export const deleteConversation = async (conversationId, userId) => {
-    if(!conversationId || !userId) {
+    if (!conversationId || !userId) {
         return {
             success: false,
             status: STATUS.BAD_REQUEST,
@@ -123,7 +97,7 @@ export const deleteConversation = async (conversationId, userId) => {
 
     const conversation = await Conversation.findOneAndDelete({ _id: conversationId, userId });
 
-    if(!conversation) {
+    if (!conversation) {
         return {
             success: false,
             status: STATUS.NOT_FOUND,

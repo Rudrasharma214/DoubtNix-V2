@@ -10,8 +10,6 @@ conversationRouter.get('/', conversationController.getConversations);
 
 conversationRouter.get('/stats', conversationController.conversationStats);
 
-conversationRouter.get('/:conversationId', conversationController.getConversationsById);
-
 conversationRouter.patch('/:conversationId', conversationController.updateConversationTitle);
 
 conversationRouter.delete('/:conversationId', conversationController.deleteConversation);

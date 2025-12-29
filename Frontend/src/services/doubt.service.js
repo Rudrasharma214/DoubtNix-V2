@@ -6,23 +6,12 @@ export const askDoubt = async ({ documentId, question, language }) => {
 };
 
 export const getConversationHistory = async (documentId) => {
-    const response = await api.get(`/doubt/conversation/${documentId}`);
+    const response = await api.get(`/doubt/${documentId}`);
     return response.data;
 };
 
-export const getDocumentConversations = async (documentId, page = 1, limit = 10) => {
-    const response = await api.get(`/doubt/conversations/${documentId}`, {
-        params: { page, limit }
-    });
-    return response.data;
-};
 
-export const getSuggestedQuestions = async (documentId) => {
-    const response = await api.get(`/doubt/suggestions/${documentId}`);
-    return response.data;
-};
-
-export const deleteConversation = async (conversationId) => {
-    const response = await api.delete(`/doubt/conversation/${conversationId}`);
+export const deleteConversationMessages = async (conversationId) => {
+    const response = await api.delete(`/doubt/${conversationId}`);
     return response.data;
 };

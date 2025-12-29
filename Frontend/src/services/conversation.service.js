@@ -1,14 +1,9 @@
 import api from './api.js';
 
-export const getConversations = async (page = 1, limit = 10) => {
+export const getConversations = async (page = 1, limit = 10, search = '') => {
     const response = await api.get('/conversations', {
-        params: { page, limit }
+        params: { page, limit, search }
     });
-    return response.data;
-};
-
-export const getConversationById = async (conversationId) => {
-    const response = await api.get(`/conversations/${conversationId}`);
     return response.data;
 };
 

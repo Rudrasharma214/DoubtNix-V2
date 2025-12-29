@@ -26,7 +26,7 @@ const ConversationCard = ({ conversation }) => {
   };
 
   const handleCardClick = () => {
-    navigate(`/document/${conversation.documentId}`);
+    navigate(`/document/${conversation.documentId._id}`);
   };
 
   const messageCount = conversation.messages?.length || 0;
@@ -47,10 +47,6 @@ const ConversationCard = ({ conversation }) => {
           <div className="flex items-center space-x-1">
             <FileText className="h-4 w-4" />
             <span>{documentName}</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <MessageSquare className="h-4 w-4" />
-            <span>{messageCount} message{messageCount !== 1 ? 's' : ''}</span>
           </div>
           <div className="flex items-center space-x-1">
             <Clock className="h-4 w-4" />

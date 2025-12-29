@@ -1,7 +1,7 @@
 import { useMutation } from "@tanstack/react-query";
 import { 
     askDoubt,
-    deleteConversation, 
+    deleteConversationMessages, 
 } from "../../services/doubt.service";
 
 export const useAskDoubtMutation = () => {
@@ -12,10 +12,10 @@ export const useAskDoubtMutation = () => {
     });
 };
 
-export const useDeleteConversationMutation = () => {
+export const useDeleteConversationMessagesMutation = () => {
     return useMutation({
         mutationFn: async (conversationId) => {
-            return await deleteConversation(conversationId);
+            return await deleteConversationMessages(conversationId);
         },
     });
 };

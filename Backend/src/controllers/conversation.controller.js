@@ -18,23 +18,6 @@ export const getConversations = async (req, res, next) => {
     }
 };
 
-export const getConversationsById = async (req, res, next) => {
-    try {
-        const { conversationId } = req.params;
-        const { id: userId } = req.user;
-
-        const result = await conversationService.getConversationById(conversationId, userId);
-
-        if(!result.success) {
-            return sendErrorResponse(res, result.status, result.message, result.errors);
-        }
-
-        return sendResponse(res, result.status, result.message, result.data);
-    } catch (error) {
-        next(error);
-    }
-};
-
 export const updateConversationTitle = async (req, res, next) => {
     try {
         const { conversationId } = req.params;

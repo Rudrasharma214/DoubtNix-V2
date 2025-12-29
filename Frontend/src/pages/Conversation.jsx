@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
 import ConversationCard from '../components/ConversationCard';
 import {
@@ -10,12 +10,24 @@ const Conversation = () => {
   const [page, setPage] = useState(1);
   const limit = 10;
 
+  // Search (debounced)
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(search.trim());
+      setPage(1); // reset to first page on new search
+    }, 400);
+    return () => clearTimeout(t);
+  }, [search]);
+
   /* Queries */
   const {
     data: conversationsRes,
     isLoading: conversationsLoading,
     isError: conversationsError,
-  } = useGetConversations(page, limit);
+  } = useGetConversations(page, limit, debouncedSearch);
 
   const {
     data: statsRes,
@@ -49,11 +61,7 @@ const Conversation = () => {
       {/* Stats Section */}
       {statsLoading ? (
         <div className="text-center text-gray-500">Loading statistics...</div>
-      ) : statsError ? (
-        <div className="text-center text-red-500">
-          Failed to load statistics
-        </div>
-      ) : (
+      ) :  (
         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             value={stats.totalConversations}
@@ -84,6 +92,8 @@ const Conversation = () => {
           <Search className="h-5 w-5 text-gray-400 dark:text-gray-500" />
           <input
             type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
             placeholder="Search conversations by title or message content..."
             className="flex-1 border-0 focus:ring-0 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-transparent"
           />
