@@ -4,7 +4,10 @@ import {
   register, 
   verifyEmail, 
   verifyLoginEmail,
-  logout
+  logout,
+  changePassword,
+  forgotPassword,
+  resetPassword
 } from '../../services/auth.service.js';
 
 
@@ -38,4 +41,28 @@ export const useLogout = () => {
       return logout();
     },
   }); 
+};
+
+export const useChangePassword = () => {
+  return useMutation({
+    mutationFn: (data) => {
+      return changePassword(data);
+    },
+  });
+};
+
+export const useForgotPassword = (email) => {
+  return useMutation({
+    mutationFn: (email) => {
+      return forgotPassword(email);
+    },
+  });
+};
+
+export const useResetPassword = (data) => {
+  return useMutation({
+    mutationFn: (data) => {
+      return resetPassword(data);
+    },
+  });
 };

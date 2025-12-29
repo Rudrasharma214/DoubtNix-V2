@@ -244,7 +244,7 @@ export const requestPasswordReset = async (req, res, next) => {
       );
     }
 
-    sendResponse(res, result.status, result.message, null);
+    sendResponse(res, result.status, result.message, result.data);
   } catch (error) {
     next(error);
   }

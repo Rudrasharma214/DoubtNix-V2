@@ -405,11 +405,12 @@ export const requestPasswordReset = async (email) => {
     success: true,
     status: STATUS.OK,
     message: 'If email exists, OTP has been sent for password reset',
+    data: { userId: user._id },
   };
 };
 
 export const resetPassword = async (userId, otp, newPassword) => {
-  const record = await OTP.findOneAndDelete({ userId });
+  const record = await OTP.findOneAndDelete({ userId }, { sort: { createdAt: -1 } });
   if (!record) {
     return {
       success: false,
@@ -418,7 +419,9 @@ export const resetPassword = async (userId, otp, newPassword) => {
     };
   }
 
-  const isValid = verifyOtp(otp, record.otp);
+  const plainOtp = String(otp || '').trim();
+
+  const isValid = verifyOtp(plainOtp, record.otp);
   if (!isValid) {
     return {
       success: false,

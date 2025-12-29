@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/Auth/useAuth';
 import Dashboard from '../pages/Dashboard';
 import Conversation from '../pages/Conversation';
 import ChatPage from '../pages/ChatPage';
+import Profile from '../pages/Profile';
 
 /**
  * ProtectedRoute Component: Prevents access without authentication
@@ -44,6 +45,10 @@ export const protectedRoutes = [
   {
     path: '/dashboard',
     element: <ProtectedRoute component={Dashboard} />,
+  },
+  {
+    path: '/profile',
+    element: <ProtectedRoute component={Profile} />,
   },
   {
     path: '/document/:documentId',

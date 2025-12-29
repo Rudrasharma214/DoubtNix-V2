@@ -34,3 +34,25 @@ export const getUser = async () => {
   const response = await api.get('/auth/me');
   return response.data;
 };
+
+export const changePassword = async (data) => {
+  const response = await api.post('/auth/change-password', {
+    currentPassword: data.currentPassword,
+    newPassword: data.newPassword
+  });
+  return response.data;
+}
+
+export const forgotPassword = async (email) => {
+  const response = await api.post('/auth/forgot-password', { email });
+  return response.data;
+};
+
+export const resetPassword = async (data) => {
+  const response = await api.post('/auth/reset-password', {
+    userId: data.userId,
+    otp: data.otp,
+    newPassword: data.newPassword
+  });
+  return response.data;
+};

@@ -4,6 +4,7 @@ import Login from '../pages/Login';
 import Register from '../pages/Register';
 import Welcome from '../pages/Welcome';
 import EmailVerification from '../pages/EmailVerication';
+import ForgotPassword from '../pages/ForgotPassword';
 
 /**
  * OpenRoute Component: Redirects authenticated users from login/register
@@ -35,6 +36,10 @@ export const openRoutes = [
   {
     path: '/login',
     element: <OpenRoute component={Login} />,
+  },
+  {
+    path: '/forgot',
+    element: <OpenRoute component={ForgotPassword} />,
   },
   {
     path: '/register',
