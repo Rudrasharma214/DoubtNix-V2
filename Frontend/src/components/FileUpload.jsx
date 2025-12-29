@@ -153,10 +153,9 @@ const FileUpload = ({ onFileUpload, uploading }) => {
             <div className="mt-3 sm:mt-4 flex justify-end">
               <button
                 onClick={handleUpload}
-                className="btn-primary text-sm sm:text-base px-3 sm:px-4 py-2"
+                className="bg-blue-500 rounded-lg text-sm sm:text-base px-3 sm:px-4 py-2"
                 disabled={uploading}
               >
-                <Upload className="h-4 w-4 mr-2" />
                 <span className="hidden sm:inline">Upload File</span>
                 <span className="sm:hidden">Upload</span>
               </button>
@@ -173,7 +172,7 @@ const FileUpload = ({ onFileUpload, uploading }) => {
             <p className="font-medium mb-1">Supported file types:</p>
             <ul className="list-disc list-inside space-y-1">
               <li><strong>Documents:</strong> PDF, DOCX</li>
-              <li><strong>Images:</strong> JPG, JPEG, PNG, (OCR will extract text)</li>
+              <li><strong>Images:</strong> JPG, JPEG, PNG</li>
               <li><strong>Maximum file size:</strong> 10MB</li>
             </ul>
           </div>

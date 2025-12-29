@@ -98,14 +98,14 @@ const Dashboard = () => {
       {/* Hero Section - Styled like Homedash Hero */}
       <section className="text-center px-6 py-12 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-gray-800 dark:to-black text-white rounded-xl shadow-xl">
         <div className="flex justify-center mb-6">
-          <Brain className="h-16 w-16 text-white drop-shadow-lg" />
+          <Brain className="h-16 w-16 dark:text-blue-500 text-gray-100" />
         </div>
         <h1 className="text-4xl sm:text-5xl font-bold mb-4 drop-shadow">
           DoubtNix - AI Doubt Solver
         </h1>
-        <p className="text-lg sm:text-xl max-w-2xl mx-auto opacity-90">
-          Upload your documents (PDF, DOC, or images) and get instant AI-powered answers
-          to your questions. Powered by Google's Gemini AI.
+        <p className="text-lg whitespace-nowrap sm:text-xl max-w-2xl mx-auto opacity-90">
+          Upload your documents and get instant AI-powered answers
+          to your questions.
         </p>
       </section>
 

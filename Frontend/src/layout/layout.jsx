@@ -53,7 +53,7 @@ const Layout = ({ children }) => {
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <Link to="/dashboard" className="flex items-center space-x-2 flex-shrink-0">
-              <Brain className="h-6 w-6 sm:h-8 sm:w-8 text-primary-600 dark:text-primary-400" />
+              <Brain className="h-6 w-6 sm:h-8 sm:w-8 text-blue-500 " />
               <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
                 DoubtNix
               </span>
@@ -84,11 +84,10 @@ const Layout = ({ children }) => {
                         <Link
                           key={item.name}
                           to={item.href}
-                          className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${
-                            isActive(item.href)
-                              ? "text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/20"
-                              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
-                          }`}
+                          className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 ${isActive(item.href)
+                            ? "text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/20"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                            }`}
                         >
                           <Icon className="h-4 w-4" />
                           <span>{item.name}</span>
@@ -105,11 +104,10 @@ const Layout = ({ children }) => {
                         <Link
                           key={item.name}
                           to={item.href}
-                          className={`p-2 rounded-md transition-colors duration-200 ${
-                            isActive(item.href)
-                              ? "text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/20"
-                              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
-                          }`}
+                          className={`p-2 rounded-md transition-colors duration-200 ${isActive(item.href)
+                            ? "text-primary-600 bg-primary-50 dark:text-primary-400 dark:bg-primary-900/20"
+                            : "text-gray-600 hover:text-gray-900 hover:bg-gray-100 dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
+                            }`}
                           title={item.name}
                         >
                           <Icon className="h-5 w-5" />
@@ -191,15 +189,23 @@ const Layout = ({ children }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-2 sm:space-y-0">
             <div className="flex items-center space-x-2">
-              <Brain className="h-5 w-5 text-primary-600 dark:text-primary-400" />
-              <span className="text-sm text-gray-600 dark:text-gray-300">
-                DoubtNix - Powered by Gemini AI
+              {/* Small screens: show only brand text */}
+
+              <span className="sm:hidden flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300">
+                <span>© {new Date().getFullYear()} DoubtNix, All rights reserved.</span>
               </span>
+              {/* Medium+ screens: icon + full brand text */}
+              <div className="hidden sm:flex items-center space-x-2">
+                <Brain className="h-5 w-5 text-blue-500" />
+                <span className="text-sm text-gray-600 dark:text-gray-300">
+                  DoubtNix - Powered by Gemini AI
+                </span>
+              </div>
             </div>
-            <div className="text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
+            <div className="hidden sm:block text-sm text-gray-500 dark:text-gray-400 text-center sm:text-left">
               Upload documents and get instant AI-powered answers
             </div>
-            <div className="text-sm text-gray-400 dark:text-gray-500 text-center sm:text-right">
+            <div className="hidden sm:block text-sm text-gray-400 dark:text-gray-500 text-center sm:text-right">
               © {new Date().getFullYear()} Rudra Sharma. All rights reserved.
             </div>
           </div>

@@ -1,14 +1,23 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { FileText, MessageSquare, Upload, Brain } from "lucide-react";
+import { useAuth } from "../context/authContext.jsx";
 
 const Welcome = () => {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
   return (
     <div className="space-y-12 px-4 sm:px-8 py-10 max-w-7xl mx-auto">
       {/* Hero Section */}
       <section className="text-center px-6 py-12 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 dark:from-gray-900 dark:via-gray-800 dark:to-black text-white rounded-xl shadow-xl">
         <div className="flex justify-center mb-6">
-          <Brain className="h-16 w-16 text-white drop-shadow-lg" />
+          <Brain className="h-16 w-16 dark:text-blue-500 text-gray-100" />
         </div>
         <h1 className="text-4xl sm:text-5xl font-bold mb-4 drop-shadow">
           Welcome to DoubtNix
@@ -66,7 +75,8 @@ const Welcome = () => {
       </section>
 
       {/* How It Works */}
-      <section className="p-6 bg-gradient-to-br from-purple-100 via-blue-100 to-pink-100 dark:from-gray-800 dark:to-gray-900 rounded-lg shadow border dark:border-gray-700">
+      <section className=" p-6 bg-gradient-to-br from-purple-100 via-blue-100 to-pink-100 dark:from-gray-800 dark:via-gray-900 dark:to-black rounded-lg shadow border dark:border-gray-700">
+
         <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
           How It Works
         </h2>
@@ -93,43 +103,43 @@ const Welcome = () => {
 
       {/* Stats Section */}
       {/* Stats Section */}
-<section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-center bg-gradient-to-r from-blue-50 to-purple-100 dark:from-gray-800 dark:to-gray-900 p-6 rounded-lg shadow border dark:border-gray-700">
-  <div>
-    <h3 className="text-3xl font-extrabold text-indigo-800 dark:text-indigo-400">
-      12K+
-    </h3>
-    <p className="text-sm font-medium text-gray-800 dark:text-gray-300">
-      Active Students
-    </p>
-    <p className="text-xs text-gray-500 dark:text-gray-400">
-      Learning with DoubtNix daily
-    </p>
-  </div>
+      <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 text-center bg-gradient-to-r from-blue-50 to-purple-100 dark:from-gray-800 dark:to-gray-900 p-6 rounded-lg shadow border dark:border-gray-700">
+        <div>
+          <h3 className="text-3xl font-extrabold text-indigo-800 dark:text-indigo-400">
+            12K+
+          </h3>
+          <p className="text-sm font-medium text-gray-800 dark:text-gray-300">
+            Active Students
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Learning with DoubtNix daily
+          </p>
+        </div>
 
-  <div>
-    <h3 className="text-3xl font-extrabold text-blue-600 dark:text-blue-400">
-      80K+
-    </h3>
-    <p className="text-sm font-medium text-gray-800 dark:text-gray-300">
-      Study Hours
-    </p>
-    <p className="text-xs text-gray-500 dark:text-gray-400">
-      Logged by learners
-    </p>
-  </div>
+        <div>
+          <h3 className="text-3xl font-extrabold text-blue-600 dark:text-blue-400">
+            80K+
+          </h3>
+          <p className="text-sm font-medium text-gray-800 dark:text-gray-300">
+            Study Hours
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Logged by learners
+          </p>
+        </div>
 
-  <div>
-    <h3 className="text-3xl font-extrabold text-pink-600 dark:text-pink-400">
-      98%
-    </h3>
-    <p className="text-sm font-medium text-gray-800 dark:text-gray-300">
-      Satisfaction Rate
-    </p>
-    <p className="text-xs text-gray-500 dark:text-gray-400">
-      Based on student feedback
-    </p>
-  </div>
-</section>
+        <div>
+          <h3 className="text-3xl font-extrabold text-pink-600 dark:text-pink-400">
+            98%
+          </h3>
+          <p className="text-sm font-medium text-gray-800 dark:text-gray-300">
+            Satisfaction Rate
+          </p>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            Based on student feedback
+          </p>
+        </div>
+      </section>
 
 
       {/* FAQ */}
