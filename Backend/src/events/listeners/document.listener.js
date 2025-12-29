@@ -60,16 +60,16 @@ eventBus.on(EVENTS.DOCUMENT_EXTRACTION, async (event) => {
 });
 
 eventBus.on(EVENTS.DOCUMENT_DELETED, async (event) => {
-  const { cloudinaryPublicId } = event;
+  const { publicId } = event;
+  logger.info(`Received document deletion event for Cloudinary ID: ${publicId}`);
 
-  if (cloudinaryPublicId) {
-    logger.info(`Deleting document from Cloudinary: ${document.cloudinaryPublicId}`);
-    const cloudinaryResult = await deleteFromCloudinary(document.cloudinaryPublicId);
+    logger.info(`Deleting document from Cloudinary: ${publicId}`);
+    const cloudinaryResult = await deleteFromCloudinary(publicId);
 
     if (!cloudinaryResult.success) {
-      logger.warn(`Failed to delete from Cloudinary: ${document.cloudinaryPublicId}`, cloudinaryResult);
+      logger.warn(`Failed to delete from Cloudinary: ${publicId}`, cloudinaryResult);
     }
-  }
+
 });
 
 eventBus.on(EVENTS.MESSAGE_DELETED, async (event) => {

@@ -8,7 +8,5 @@ export const useGetDocuments = (params = {}) => {
             return await getUserDocuments(params);
         },
         retry: false, // Retry only once (2 attempts total)
-        staleTime: 5 * 60 * 1000, // 5 minutes
-        gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
     });
 };
