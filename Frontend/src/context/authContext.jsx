@@ -35,7 +35,6 @@ export const AuthProvider = ({ children }) => {
     try {
       // API interceptor will automatically attach token
       const response = await logoutService();
-      console.log('Logout successful:', response);
       localStorage.removeItem('accessToken');
       setTokenState(null);
       queryClient.clear();

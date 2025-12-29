@@ -8,6 +8,9 @@ import { finalizeExtraction } from '../../services/fileProcessing/processExtract
 import fs from 'fs';
 import eventBus from '../eventBus.js';
 import { EVENTS } from '../events.js';
+import { deleteFromCloudinary } from '../../config/cloudinary.js';
+import Conversation from '../../models/Conversation.model.js';
+import Message from '../../models/Message.model.js';
 
 eventBus.on(EVENTS.DOCUMENT_EXTRACTION, async (event) => {
   const { mimeType, documentId } = event;
@@ -53,5 +56,36 @@ eventBus.on(EVENTS.DOCUMENT_EXTRACTION, async (event) => {
         if (err) logger.error(`Failed to delete temp file ${localPath}:`, err);
       });
     }
+  }
+});
+
+eventBus.on(EVENTS.DOCUMENT_DELETED, async (event) => {
+  const { cloudinaryPublicId } = event;
+
+  if (cloudinaryPublicId) {
+    logger.info(`Deleting document from Cloudinary: ${document.cloudinaryPublicId}`);
+    const cloudinaryResult = await deleteFromCloudinary(document.cloudinaryPublicId);
+
+    if (!cloudinaryResult.success) {
+      logger.warn(`Failed to delete from Cloudinary: ${document.cloudinaryPublicId}`, cloudinaryResult);
+    }
+  }
+});
+
+eventBus.on(EVENTS.MESSAGE_DELETED, async (event) => {
+  const { documentId, userId } = event;
+
+  logger.info(`Deleting messages and conversations for document ${documentId}`);
+  const conversations = await Conversation.find({ documentId: documentId, userId });
+  const conversationIds = conversations.map(c => c._id);
+
+  if (conversationIds.length > 0) {
+    const messagesResult = await Message.deleteMany({ conversationId: { $in: conversationIds } });
+    logger.info(`Deleted ${messagesResult.deletedCount} messages associated with document ${documentId}`);
+
+    const convsResult = await Conversation.deleteMany({ _id: { $in: conversationIds } });
+    logger.info(`Deleted ${convsResult.deletedCount} conversations associated with document ${documentId}`);
+  } else {
+    logger.info(`No conversations found for document ${documentId}`);
   }
 });

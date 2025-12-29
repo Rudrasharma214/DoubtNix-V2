@@ -1,9 +1,9 @@
 import STATUS from "../constants/statusCode.js"
 import Document from "../models/Document.model.js"
-import User from "../models/User.model.js"
+import Message from "../models/Message.model.js"
 import eventBus from "../events/eventBus.js"
 import logger from "../config/logger.js";
-import { deleteFromCloudinary } from "../config/cloudinary.js";
+import Conversation from "../models/Conversation.model.js";
 
 
 export const uploadDocument = async ({
@@ -149,22 +149,19 @@ export const deleteDocument = async ({ userId, documentId }) => {
         };
     }
 
-    // Delete from Cloudinary first
-    if (document.cloudinaryPublicId) {
-      logger.info(`Deleting document from Cloudinary: ${document.cloudinaryPublicId}`);
-      const cloudinaryResult = await deleteFromCloudinary(document.cloudinaryPublicId);
-      
-      if (!cloudinaryResult.success) {
-        logger.warn(`Failed to delete from Cloudinary: ${document.cloudinaryPublicId}`, cloudinaryResult);
-        // Continue with database deletion even if Cloudinary deletion fails
-      }
-    }
+    const publicId = document.cloudinaryPublicId;
+    logger.info(`Emitting document deletion event for document ${documentId}, Cloudinary ID: ${publicId}`);
+    eventBus.emit('document.deleted', { 
+      publicId 
+    });
 
-    // Delete from database
+    logger.info(`Deleting messages associated with document ${documentId}`);
+    eventBus.emit('messages.deleted', { 
+      documentId,
+      userId 
+    });
+
     await Document.deleteOne({ _id: documentId, userId });
-    
-    logger.info(`Document ${documentId} deleted successfully for user ${userId}`);
-
     return {
         success: true,
         status: STATUS.OK,

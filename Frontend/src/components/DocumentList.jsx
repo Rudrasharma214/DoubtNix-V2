@@ -102,11 +102,7 @@ const DocumentList = ({ documents, loading, onDocumentClick, onDeleteDocument })
       {documents.map((document) => (
         <div
           key={document._id}
-          onClick={() => {
-            console.log('DocumentList - document object:', document);
-            console.log('DocumentList - document._id:', document._id, 'Type:', typeof document._id);
-            onDocumentClick(document._id);
-          }}
+          onClick={() => { onDocumentClick(document._id) }}
           className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 sm:p-4 hover:shadow-md transition-shadow cursor-pointer group"
         >
           <div className="flex items-start sm:items-center justify-between">

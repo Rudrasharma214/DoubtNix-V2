@@ -1,4 +1,4 @@
-import winston from "winston";
+import winston from 'winston';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
@@ -6,15 +6,19 @@ const logFormat = printf(({ level, message, timestamp, stack }) => {
   return `${timestamp} [${level}]: ${stack || message}`;
 });
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 const logger = winston.createLogger({
-  level: process.env.NODE_ENV === "production" ? "info" : "debug",
+  level: isProduction ? 'warn' : 'debug',
   format: combine(
-    colorize(),
-    timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    colorize({ all: !isProduction }), 
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
     errors({ stack: true }),
     logFormat
   ),
-  transports: [new winston.transports.Console()],
+  transports: [
+    new winston.transports.Console(),
+  ],
   exitOnError: false,
 });
 

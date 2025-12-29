@@ -8,5 +8,5 @@ const  PORT = env.PORT;
 connectDB();
 
 app.listen(PORT, ()=>{
-    logger.info(`Server is running on port ${PORT}`);
+    logger.warn(`Server is running on port ${PORT}`);
 })

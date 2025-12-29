@@ -5,5 +5,6 @@ export const EVENTS = {
   LOGIN_OTP: 'login.otp',
   PASSWORD_RESET: 'password.reset',
   DOCUMENT_EXTRACTION: 'document.extraction',
-
+  DOCUMENT_DELETED: 'document.deleted',
+  MESSAGE_DELETED: 'messages.deleted'
 };
