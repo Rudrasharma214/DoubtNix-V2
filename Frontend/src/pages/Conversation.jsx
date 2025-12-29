@@ -117,7 +117,7 @@ const Conversation = () => {
         ) : (
           conversations.map((conversation) => (
             <ConversationCard
-              key={conversation.id}
+              key={conversation._id}
               conversation={conversation}
             />
           ))

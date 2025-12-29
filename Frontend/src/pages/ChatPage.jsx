@@ -90,7 +90,7 @@ const ChatPage = () => {
                         </button>
                         <div className="min-w-0">
                             <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white truncate">
-                               {conversationHistory?.data?.title || 'Start Conversation'}
+                                {conversationHistory?.data?.title || 'Start Conversation'}
                             </h1>
                             <p className="text-sm text-gray-500 dark:text-gray-400">
                                 {conversationHistory?.data?.documentInfo?.name || ''}
@@ -152,14 +152,14 @@ const ChatPage = () => {
                             >
                                 <div
                                     className={`max-w-xs sm:max-w-md lg:max-w-2xl px-4 py-3 rounded-lg ${message.type === 'user'
-                                            ? 'bg-indigo-600 text-white rounded-br-none'
-                                            : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-none'
+                                        ? 'bg-indigo-600 dark:bg-indigo-500 text-white rounded-br-none'
+                                        : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-bl-none'
                                         }`}
                                 >
                                     {message.type === 'user' ? (
                                         <p className="text-sm sm:text-base leading-relaxed">{message.content}</p>
                                     ) : (
-                                        <div className="text-sm sm:text-base leading-relaxed prose prose-invert dark:prose-invert max-w-none">
+                                        <div className="text-sm sm:text-base leading-relaxed prose dark:prose-invert max-w-none text-gray-900 dark:text-gray-100">
                                             <ReactMarkdown
                                                 components={{
                                                     p: ({ children }) => <p className="mb-2">{children}</p>,
@@ -169,12 +169,12 @@ const ChatPage = () => {
                                                     ol: ({ children }) => <ol className="list-decimal list-inside mb-2">{children}</ol>,
                                                     li: ({ children }) => <li className="mb-1">{children}</li>,
                                                     code: ({ children }) => (
-                                                        <code className="bg-gray-700 dark:bg-gray-900 px-2 py-1 rounded text-xs font-mono">
+                                                        <code className="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 px-2 py-1 rounded text-xs font-mono">
                                                             {children}
                                                         </code>
                                                     ),
                                                     pre: ({ children }) => (
-                                                        <pre className="bg-gray-700 dark:bg-gray-900 p-3 rounded-lg mb-2 overflow-x-auto">
+                                                        <pre className="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-100 p-3 rounded-lg mb-2 overflow-x-auto">
                                                             {children}
                                                         </pre>
                                                     ),
@@ -182,7 +182,7 @@ const ChatPage = () => {
                                                     h2: ({ children }) => <h2 className="text-base font-bold mb-2">{children}</h2>,
                                                     h3: ({ children }) => <h3 className="text-sm font-bold mb-2">{children}</h3>,
                                                     blockquote: ({ children }) => (
-                                                        <blockquote className="border-l-4 border-indigo-500 pl-3 italic mb-2">
+                                                        <blockquote className="border-l-4 border-indigo-500 dark:border-indigo-400 pl-3 italic mb-2">
                                                             {children}
                                                         </blockquote>
                                                     ),
@@ -221,7 +221,7 @@ const ChatPage = () => {
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                             placeholder="Ask a question about your document..."
-                            className="flex-1 px-4 py-3 rounded-lg border border-gray-700 bg-gray-800/50 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all backdrop-blur-sm"
+                            className="flex-1 px-4 py-3 rounded-lg border border-gray-700 dark:bg-gray-800/50 dark:text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:border-transparent transition-all backdrop-blur-sm"
                         />
                         <button
                             onClick={handleSendMessage}
