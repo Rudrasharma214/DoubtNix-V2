@@ -270,3 +270,43 @@ export const resetPassword = async (req, res, next) => {
     next(error);
   }
 };
+
+export const resendVerificationOtp = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+
+    const result = await authService.resendVerificationOtp(email);  
+    if (!result.success) {
+      return sendErrorResponse(
+        res,
+        result.status,
+        result.message,
+        result.errors || null
+      );
+    }
+
+    sendResponse(res, result.status, result.message, result.data);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resendLoginOtp = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    const result = await authService.resendLoginOtp(id);  
+    if (!result.success) {
+      return sendErrorResponse(
+        res,
+        result.status,
+        result.message,
+        result.errors || null
+      );
+    }
+
+    sendResponse(res, result.status, result.message, result.data);
+  } catch (error) {
+    next(error);
+  }
+};

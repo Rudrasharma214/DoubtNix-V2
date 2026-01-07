@@ -52,4 +52,15 @@ eventBus.on(EVENTS.PASSWORD_RESET, async ({ email, otp }) => {
   }
 });
 
-
+eventBus.on(EVENTS.RESEND_VERIFY_OTP, async ({ email, otp }) => {
+  try {
+    await sendOtpEmail({
+      to: email,
+      otp,
+      title: 'Verification OTP',
+      description: 'A new OTP has been sent to verify your email address.',
+    });
+  } catch (err) {
+    logger.error('Resend verification OTP email failed', err);
+  }
+});

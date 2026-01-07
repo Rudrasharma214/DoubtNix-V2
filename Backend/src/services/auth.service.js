@@ -1,5 +1,4 @@
 import User from "../models/User.model.js";
-import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import STATUS from "../constants/statusCode.js";
@@ -292,7 +291,7 @@ export const refreshToken = async (incomingRefreshToken) => {
         success: false,
         status: STATUS.UNAUTHORIZED,
         message: "Invalid refresh token",
-      };      
+      };
     };
 
     if (!isValid) {
@@ -347,7 +346,7 @@ export const getUserProfile = async (userId) => {
     message: 'User profile fetched successfully',
     data: user,
   };
-  
+
 };
 
 export const changePassword = async (userId, currentPassword, newPassword) => {
@@ -371,7 +370,7 @@ export const changePassword = async (userId, currentPassword, newPassword) => {
 
   user.password = newPassword;
   await user.save();
-  
+
   return {
     success: true,
     status: STATUS.OK,
@@ -446,5 +445,93 @@ export const resetPassword = async (userId, otp, newPassword) => {
     success: true,
     status: STATUS.OK,
     message: 'Password reset successful',
+  };
+};
+
+export const resendVerificationOtp = async (email) => {
+  if (!email) {
+    return {
+      success: false,
+      status: STATUS.BAD_REQUEST,
+      message: 'Email is required',
+    };
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return {
+      success: false,
+      status: STATUS.NOT_FOUND,
+      message: 'If the user exists, a new OTP has been sent to the email',
+    };
+  }
+
+  if (user.isEmailVerified) {
+    return {
+      success: false,
+      status: STATUS.BAD_REQUEST,
+      message: 'Email is already verified',
+    };
+  }
+
+  const otp = generateOtp();
+
+  await OTP.create({
+    userId: user._id,
+    otp,
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+  });
+
+  eventBus.emit('verification.resend', {
+    email: user.email,
+    otp,
+  });
+
+  return {
+    success: true,
+    status: STATUS.OK,
+    message: 'If the user exists, a new OTP has been sent to the email',
+    data: { userId: user._id },
+  };
+};  
+
+export const resendLoginOtp = async (id) => {
+  if (!id) {
+    return {
+      success: false,
+      status: STATUS.BAD_REQUEST,
+      message: 'User ID is required',
+    };
+  };
+
+  const user = await User.findById(id);
+  if (!user) {
+    return {
+      success: false,
+      status: STATUS.NOT_FOUND,
+      message: 'User not found',
+    };
+  }
+
+  const otp = await OTP.findOneAndDelete({ userId: id });
+  const newOtp = generateOtp();
+
+  await OTP.create({
+    userId: user._id,
+    otp: newOtp,
+    expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+  });
+
+  eventBus.emit('login.otp', {
+    email: user.email,
+    otp: newOtp,
+  });
+  return {
+    success: true,
+    status: STATUS.OK,
+    message: 'OTP resent to email for verification',
+    data: {
+      userId: user._id,
+    },
   };
 };

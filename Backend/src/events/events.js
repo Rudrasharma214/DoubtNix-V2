@@ -6,5 +6,7 @@ export const EVENTS = {
   PASSWORD_RESET: 'password.reset',
   DOCUMENT_EXTRACTION: 'document.extraction',
   DOCUMENT_DELETED: 'document.deleted',
-  MESSAGE_DELETED: 'messages.deleted'
+  MESSAGE_DELETED: 'messages.deleted',
+  RESEND_VERIFY_OTP: 'verification.resend',
+  
 };
