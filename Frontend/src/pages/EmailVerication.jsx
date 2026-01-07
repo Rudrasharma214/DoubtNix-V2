@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Mail, ArrowLeft } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useEmailverification } from '../hooks/Auth/useMutation';
 import { useAuth } from '../hooks/Auth/useAuth';
 
@@ -17,24 +18,29 @@ const EmailVerification = () => {
   const verifyMutation = useEmailverification();
 
   // Handle successful verification
-  const handleVerifySuccess = (data) => {
-    // Save token if provided
-    if (data.data?.accessToken) {
-      auth.setAccessToken(data.data.accessToken);
+  const handleVerifySuccess = (response) => {
+    // Token is directly in response.data (it's a JWT string)
+    const token = response.data;
+    if (token) {
+      auth.setAccessToken(token);
+      toast.success('Email verified successfully!');
+      setError('');
+      
+      // Redirect to dashboard immediately after saving token
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
+    } else {
+      toast.error('No token received. Please try again.');
+      setError('No token received. Please try again.');
     }
-
-    setSuccessMessage('Email verified successfully! Redirecting to dashboard...');
-    setError('');
-    
-    // Redirect to dashboard after 1.5 seconds
-    setTimeout(() => {
-      navigate('/dashboard');
-    }, 1500);
   };
 
   // Handle verification error
   const handleVerifyError = (err) => {
-    setError(err.response?.data?.message || 'Failed to verify OTP');
+    const errorMessage = err.response?.data?.message || 'Failed to verify OTP';
+    toast.error(errorMessage);
+    setError(errorMessage);
     setSuccessMessage('');
   };
 

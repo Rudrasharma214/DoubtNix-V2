@@ -38,7 +38,9 @@ const Layout = ({ children }) => {
   };
 
   // Don't show navigation for auth pages
-  const isAuthPage = ['/login', '/register', '/forgot'].includes(location.pathname);
+  const isAuthPage = 
+    ['/login', '/register', '/forgot'].includes(location.pathname) ||
+    location.pathname.startsWith('/email/verify/');
 
   // For auth pages, return only the children without layout wrapper
   if (isAuthPage) {
