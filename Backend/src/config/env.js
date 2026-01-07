@@ -18,4 +18,5 @@ export const env = {
     NODE_ENV: process.env.NODE_ENV || 'development',
     MAX_FILE_SIZE: process.env.MAX_FILE_SIZE || '10485760',
     GEMINI_API_KEY: process.env.GEMINI_API_KEY || 'your_gemini_api_key_here',
+    HF_TOKEN: process.env.HF_TOKEN || '',
 }

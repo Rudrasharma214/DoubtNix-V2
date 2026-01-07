@@ -1,41 +1,51 @@
-import { GoogleGenAI } from "@google/genai";
+import { OpenAI } from "openai";
 import { env } from "./env.js";
 import logger from "./logger.js";
 
 class GeminiService {
   constructor() {
-    this.ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
-    this.model = 'gemini-2.5-flash';
+    this.client = new OpenAI({
+      baseURL: "https://router.huggingface.co/v1",
+      apiKey: env.HF_TOKEN,
+    });
+    this.model = "meta-llama/Llama-3.1-8B-Instruct:novita";
   }
 
   async makeRequest(prompt, retries = 3) {
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
-        const response = await this.ai.models.generateContent({
+        const completion = await this.client.chat.completions.create({
           model: this.model,
-          contents: prompt,
+          messages: [
+            {
+              role: "user",
+              content: prompt,
+            },
+          ],
+          temperature: 0.3,
+          max_tokens: 2000,
         });
 
-        if (response.text) {
-          return response.text;
+        if (completion.choices?.[0]?.message?.content) {
+          return completion.choices[0].message.content;
         }
 
-        throw new Error('Invalid response format from Gemini API');
+        throw new Error('Invalid response format from Hugging Face API');
       } catch (error) {
         const status = error.status || error.code;
         const isRetryableError = [503, 429, 500, 502].includes(status);
 
-        logger.error(`Gemini API Error (attempt ${attempt}/${retries}):`, {
+        logger.error(`Hugging Face API Error (attempt ${attempt}/${retries}):`, {
           message: error.message,
           status: status
         });
 
         if (attempt === retries || !isRetryableError) {
-          throw new Error(`Gemini API Error: ${error.message}`);
+          throw new Error(`Hugging Face API Error: ${error.message}`);
         }
 
         const waitTime = Math.pow(2, attempt) * 1000;
-        logger.info(`Retrying Gemini API call in ${waitTime / 1000} seconds...`);
+        logger.info(`Retrying Hugging Face API call in ${waitTime / 1000} seconds...`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
       }
     }
