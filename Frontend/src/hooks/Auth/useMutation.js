@@ -7,7 +7,9 @@ import {
   logout,
   changePassword,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  resendVerifyEmail,
+  resendLoginOtp
 } from '../../services/auth.service.js';
 
 
@@ -63,6 +65,22 @@ export const useResetPassword = (data) => {
   return useMutation({
     mutationFn: (data) => {
       return resetPassword(data);
+    },
+  });
+};
+
+export const useResendVerifyEmail = () => {
+  return useMutation({
+    mutationFn: (email) => {
+      return resendVerifyEmail(email);
+    },
+  });
+};
+
+export const useResendLoginOtp = () => {
+  return useMutation({
+    mutationFn: (userId) => {
+      return resendLoginOtp(userId);
     },
   });
 };

@@ -7,7 +7,14 @@ export const register = async (userData) => {
 
 export const verifyEmail = async (data) => {
   const response = await api.post(`/auth/verify-email`, { userId: data.userId, otp: data.otp });
-  return response.data;
+  const responseData = response.data;
+  
+  // Store accessToken in localStorage if present
+  if (responseData.success && responseData.data) {
+    localStorage.setItem('accessToken', responseData.data);
+  }
+  
+  return responseData;
 }
 
 export const login = async (credentials) => {
@@ -16,8 +23,15 @@ export const login = async (credentials) => {
 }
 
 export const verifyLoginEmail = async (data) => {
-  const response = await api.get(`/auth/verify-login-otp`, { userId: data.userId, otp: data.otp });
-  return response.data;
+  const response = await api.post(`/auth/verify-login-otp`, { userId: data.userId, otp: data.otp });
+  const responseData = response.data;
+  
+  // Store accessToken in localStorage if present
+  if (responseData.success && responseData.data) {
+    localStorage.setItem('accessToken', responseData.data);
+  }
+  
+  return responseData;
 }
 
 export const logout = async () => {
@@ -54,5 +68,15 @@ export const resetPassword = async (data) => {
     otp: data.otp,
     newPassword: data.newPassword
   });
+  return response.data;
+};
+
+export const resendVerifyEmail = async (email) => {
+  const response = await api.post('/auth/verify/resend-otp', {email});
+  return response.data;
+};
+
+export const resendLoginOtp = async (userId) => {
+  const response  = await api.post(`/auth/resend-otp/${userId}`);
   return response.data;
 };
