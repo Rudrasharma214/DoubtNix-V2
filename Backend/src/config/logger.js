@@ -1,4 +1,5 @@
 import winston from 'winston';
+import { env } from './env.js';
 
 const { combine, timestamp, printf, colorize, errors } = winston.format;
 
@@ -10,7 +11,7 @@ const logFormat = printf(({ level, message, timestamp, stack, ...meta }) => {
   return `${timestamp} [${level}]: ${stack || message}${metaStr}`;
 });
 
-const isProduction = process.env.NODE_ENV === 'production';
+const isProduction = env.NODE_ENV === 'production';
 
 const logger = winston.createLogger({
   level: isProduction ? 'warn' : 'debug',
