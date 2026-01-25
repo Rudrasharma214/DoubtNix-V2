@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import cors from 'cors';
 import { env } from './config/env.js';
 import routes from './routes/index.js';
+import { generalLimiter } from './middlewares/rateLimit.middleware.js';
 import './events/listeners/email.listener.js';
 import './events/listeners/document.listener.js';
 
@@ -19,6 +20,9 @@ app.use(cors({
   origin: allowedOrigin,
   credentials: true,
 }));
+
+// Apply rate limiting to all routes
+app.use(generalLimiter);
 
 app.get('/api/health', (req, res) => {
   res.send('API is running...');
